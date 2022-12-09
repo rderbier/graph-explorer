@@ -22,7 +22,7 @@ class NodeInfo extends React.Component {
         <Card.Title>{this.props.value.data()['name']}</Card.Title>
         <Card.Text>
         {Object.keys(this.props.value.data()).map((key)=> {
-          if ( ['id','uid','dgraph.type','label','name'].indexOf(key) == -1) {
+          if ( ['id','uid','dgraph.type','label','name','parent'].indexOf(key) == -1) {
              return (<><b>{key}</b> {this.props.value.data()[key]}<br/></> )
           }
         })}

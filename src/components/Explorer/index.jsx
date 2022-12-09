@@ -8,6 +8,7 @@ import Tab from 'react-bootstrap/Tab';
 import Tabs from 'react-bootstrap/Tabs';
 import QuerySteps from '../QuerySteps.jsx';
 import NodeInfo from '../NodeInfo.jsx';
+import NodeListInfo from '../NodeListInfo.jsx';
 import NodeSelector from '../NodeSelector.jsx';
 import Selector from '../Selector.jsx';
 import Cytoscape from 'cytoscape';
@@ -320,21 +321,21 @@ const colors = [
 
       const topMenu =[
         {
-          name: 'top10', // html/text content to be displayed in the menu
+          name: 'delete', // html/text content to be displayed in the menu
           select: (ele) => { // a function to execute when the command is selected
-            this.expandNode( ele,'top 10 investors'  ) // `ele` holds the reference to the active element
+            this.deleteNode( ele ) // `ele` holds the reference to the active element
           }
         },
         {
-          name: 'top50', // html/text content to be displayed in the menu
+          name: 'crop', // html/text content to be displayed in the menu
           select: (ele) => { // a function to execute when the command is selected
-            this.expandNode( ele,'top 50'  ) // `ele` holds the reference to the active element
+            this.cropNode( ele ) // `ele` holds the reference to the active element
           }
         },
         {
-          name: 'top100', // html/text content to be displayed in the menu
+          name: 'expand', // html/text content to be displayed in the menu
           select: (ele) => { // a function to execute when the command is selected
-            this.expandNode( ele,'top 100' ) // `ele` holds the reference to the active element
+            this.expandNode( ele ) // `ele` holds the reference to the active element
           }
         }
       ]
@@ -377,11 +378,14 @@ const colors = [
   });
   cy.on('click', 'node', (evt)=>{
     console.log( evt.type );
-    if (evt.target.data()["dgraph.type"] == "type") {
+    if (evt.target.isParent()) {
       // a type is selected on the graph representing the schema
-      this.setState({"selectedType":evt.target.data().name, "selectedNode":undefined});
+      this.setState({"selectedList":evt.target.children(), "selectedType":undefined,"selectedNode":undefined});
+    } else if (evt.target.data()["dgraph.type"] == "type") {
+      // a type is selected on the graph representing the schema
+      this.setState({"selectedType":evt.target.data().name, "selectedNode":undefined, "selectedList":undefined});
     } else { // a graph node is selected
-      this.setState({"selectedNode":evt.target, "selectedType":undefined});
+      this.setState({"selectedNode":evt.target, "selectedType":undefined, "selectedList":undefined});
     }
     //this.cyRef.layout(this.layoutOptions).run();
   });
@@ -407,7 +411,7 @@ runQuery = (query) =>   {
   return dgraph.runQuery(query)
 
 }
-buildExpandQuery(type,option,uid) {
+buildExpandQuery(type,uid) {
   var query = `{ list(func:uid(${uid})) { dgraph.type expand(_all_) { dgraph.type expand(_all_) }}}`
   switch (type) {
     case 'Company' :
@@ -460,13 +464,27 @@ expandType(ele,option) {
 
   this.runQuery(query).then((r)=>this.analyseQueryResponse(r["data"],true))
 }
-expandNode(ele,option) {
+deleteNode(ele) {
+    console.log(`delete node ${ele.id()}`);
+    ele.remove();
+}
+cropNode(ele) {
+  console.log(`crop node `);
+  const parent = ele.parent();
+  if (parent != undefined) {
+    for (var n of parent.children()) {
+      if (n.id() != ele.id()) {
+        n.remove()
+      }
+    }
+  }
+}
+
+expandNode(ele) {
   const uid = ele.id();
   const type = ele.data()['dgraph.type'][0];
-  var query = this.buildExpandQuery(type,option,uid);
-
+  var query = this.buildExpandQuery(type,uid);
   this.runQuery(query).then((r)=>this.analyseQueryResponse(r["data"],false))
-
   console.log(`round ${this.stepIndex}`);
 }
 addGraph(elements,e,compound) {
@@ -488,11 +506,13 @@ addGraph(elements,e,compound) {
       }
       point[key]=e[key];
     }
-    if (this.cyRef.getElementById(uid).length == 0) {
+    let existingNode = this.cyRef.getElementById(uid);
+    if (existingNode.length == 0) {
       point['id'] = uid;
       var classes = e["dgraph.type"] || ["default"];
-
-      point['label'] = point['name'];
+      if (point['name'] != undefined) {
+         point['label'] = 'name';
+      }
       point['parent'] = "c"+compound;
       elements.push({
         group:"nodes",
@@ -500,8 +520,14 @@ addGraph(elements,e,compound) {
         classes: classes,
         position: { x: 100.0*Math.random(), y: 100.0*Math.random() } }
       );
+      console.log(`adding node ${uid}`);
+    } else {
+      console.log(`node already exists ${uid}`);
+      if (existingNode.removed()) {
+        existingNode.restore()
+      }
     }
-  }
+  } else { console.log(`node without id or uid`)}
   return uid;
 }
 analyseQueryResponse( data , reset = true) {
@@ -515,7 +541,7 @@ analyseQueryResponse( data , reset = true) {
 
     elements.push({
       group:"nodes",
-      data:{id:'c'+this.stepIndex}})
+      data:{id:'c'+this.stepIndex, name:this.stepIndex}})
     for(var key in data) {
       if(data.hasOwnProperty(key)) {
         firstKey = key;
@@ -546,6 +572,11 @@ buildSearchQuery(criteria) {
       all(func:anyoftext(name,"${criteria.name}")) @filter(type(${criteria.type})) { dgraph.type expand(_all_) investors: count(~in) }
     }`
   }
+  if (criteria.type == "Investor") {
+    query = `{
+      all(func:anyoftext(name,"${criteria.name}")) @filter(type(${criteria.type})) { dgraph.type expand(_all_) investments: count(invest) }
+    }`
+  }
   return query;
 }
 searchNode(criteria) {
@@ -556,10 +587,14 @@ searchNode(criteria) {
   }
 }
 infoSection() {
+  // display the card about the selected node
+  // it can be a node in the schema graph or the data graph
   if (this.state.selectedNode != undefined) {
     return <NodeInfo value={this.state.selectedNode} expand={(data)=>this.expandNode(data,'top 10')}/>
   } else if (this.state.selectedType != undefined) {
     return <NodeSelector type={this.state.selectedType} query={(data)=>this.searchNode(data)}/>
+  } else if (this.state.selectedList != undefined) {
+    return <NodeListInfo elements={this.state.selectedList}/>
   }
 }
 setLayout(layoutName) {
@@ -607,7 +642,6 @@ render() {
     </Col>
     <Col>
     {this.infoSection()}
-    <QuerySteps />
     </Col>
     </Row>
     </Container>

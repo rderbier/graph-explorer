@@ -8,7 +8,7 @@ function App() {
   return (
     <>
     <Container fluid >
-      <AppHeader/>
+      <AppHeader connexion="localhost:8080"/>
       <Container fluid className="pt-5">
             <Explorer />
       </Container>

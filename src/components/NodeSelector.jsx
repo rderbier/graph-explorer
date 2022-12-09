@@ -14,6 +14,7 @@ class NodeSelector extends React.Component {
     };
   }
   generateForm() {
+
     return (
     <Form>
       <Form.Group  controlId="id1">
@@ -26,7 +27,9 @@ class NodeSelector extends React.Component {
       </Form.Group>
       <Button className="mt-2" variant="secondary" size="sm" onClick={() => this.props.query(this.state)}>Search</Button>
     </Form>
-  )
+    )
+
+
   }
 
   render() {
