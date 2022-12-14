@@ -3,7 +3,6 @@ import Container from 'react-bootstrap/Container';
 import Row from 'react-bootstrap/Row';
 import Col from 'react-bootstrap/Col';
 import Form from 'react-bootstrap/Form';
-import Button from 'react-bootstrap/Button';
 import Tab from 'react-bootstrap/Tab';
 import Tabs from 'react-bootstrap/Tabs';
 import QuerySteps from '../QuerySteps.jsx';
@@ -14,6 +13,7 @@ import Selector from '../Selector.jsx';
 import Cytoscape from 'cytoscape';
 import cxtmenu from 'cytoscape-cxtmenu';
 import dgraph from '../../services/dgraph.jsx';
+import {Exploration} from '../../services/exploration.js';
 import CytoscapeComponent from 'react-cytoscapejs';
 import COSEBilkent from 'cytoscape-cose-bilkent';
 import cola from 'cytoscape-cola';
@@ -24,7 +24,9 @@ Cytoscape.use( klay );
 
 Cytoscape.use(dagre );
 Cytoscape.use(cola);
+Cytoscape.use(COSEBilkent);
 Cytoscape.use(cxtmenu);
+
 // colors from https://www.schemecolor.com/beautiful-pastels.php
 const colors = [
   "rgb(165, 137, 175)",
@@ -44,33 +46,41 @@ const colors = [
     "InvestorType" : colors[4]
   }
 
+
   class GraphView extends React.Component {
 
     constructor(props) {
       super(props);
+      this.schemaGraph = [
+        { group:"nodes", data:{ id:"InvestorType", name:"InvestorType", "dgraph.type":"type"}, classes: ['category'] },
+        { group:"nodes", data:{ id:"Sector", name:"Sector", "dgraph.type":"type"}, classes: ['category'] },
+        { group:"nodes", data:{ id:"Industry", name:"Industry", "dgraph.type":"type"}, classes: ['category'] },
+        { group:"nodes", data:{ id:"Company", name:"Company", "dgraph.type":"type"}, classes: ['typeCompany'] },
+        { group:"nodes", data:{ id:"Investment", name:"Investment", "dgraph.type":"type"}, classes: ['relation'] },
+        { group:"nodes", data:{ id:"Investor", name:"Investor", "dgraph.type":"type"}, classes: ['typeInvestor'] },
+        { group:"nodes", data:{ id:"Country", name:"Country", "dgraph.type":"type"}, classes: ['typeCountry'] },
 
+
+
+        { group:"edges", data: { source: 'Company', target: 'Investor', label: 'investors' },classes: ['reverse'] },
+        { group:"edges", data: { source: 'Investment', target: 'Company', label: 'in' } },
+        { group:"edges", data: { source: 'Investor', target: 'Investment', label: 'invest' } },
+        { group:"edges", data: { source: 'Company', target: 'Industry' }},
+        { group:"edges", data: { source: 'Company', target: 'Country', label: 'is in' }},
+        { group:"edges", data: { source: 'Industry', target: 'Sector'}},
+        { group:"edges", data: { source: 'Investor', target: 'InvestorType' }}
+      ];
+      this.exploration = new Exploration();
+      this.exploration.addStep('Start', "", this.schemaGraph, true)
       this.state = {
         selectedNode: undefined,
         data: props.value,
-        elements: [
-          { group:"nodes", data:{ id:"InvestorType", name:"InvestorType", "dgraph.type":"type"}, classes: ['category'] },
-          { group:"nodes", data:{ id:"Sector", name:"Sector", "dgraph.type":"type"}, classes: ['category'] },
-          { group:"nodes", data:{ id:"Industry", name:"Industry", "dgraph.type":"type"}, classes: ['category'] },
-          { group:"nodes", data:{ id:"Company", name:"Company", "dgraph.type":"type"}, classes: ['typeCompany'] },
-          { group:"nodes", data:{ id:"Investor", name:"Investor", "dgraph.type":"type"}, classes: ['typeInvestor'] },
-          { group:"nodes", data:{ id:"Country", name:"Country", "dgraph.type":"type"}, classes: ['typeCountry'] },
-
-
-
-          { group:"edges", data: { source: 'Company', target: 'Investor', label: 'investors' },classes: ['reverse'] },
-          { group:"edges", data: { source: 'Investor', target: 'Company', label: 'owns' },classes: ['reverse'] },
-          { group:"edges", data: { source: 'Company', target: 'Industry' }},
-          { group:"edges", data: { source: 'Company', target: 'Country', label: 'is in' }},
-          { group:"edges", data: { source: 'Industry', target: 'Sector'}},
-          { group:"edges", data: { source: 'Investor', target: 'InvestorType' }}
-        ]
+        elements: this.exploration.getElements()
       }
-      // reference https://js.cytoscape.org/#style
+      /*
+       * style
+       * reference https://js.cytoscape.org/#style
+       */
 
       this.styles = [
         {
@@ -83,11 +93,13 @@ const colors = [
         {
           selector: 'edge',
           style: {
-            label: 'data(label)',
+            'source-label': 'data(label)',
             'target-arrow-shape': 'triangle',
-            fontSize: '12px',
-            fontWeight: 'normal',
-            textRotation: 'autorotate',
+            'source-font-size': '12px',
+            'source-font-weight': 'normal',
+            'source-text-rotation': 'autorotate',
+            'width': '1px',
+            'line-color': 'black'
 
           },
 
@@ -110,6 +122,16 @@ const colors = [
         {
           selector: '.category',
           style: {
+            width: '20px',
+            height: '20px',
+            textValign:'top',
+            fontSize: '1em',
+          }
+        },
+        {
+          selector: '.relation',
+          style: {
+            shape: 'diamond',
             width: '20px',
             height: '20px',
             textValign:'top',
@@ -142,7 +164,16 @@ const colors = [
           style: {
             curveStyle: 'bezier'
           }
+        },
+        {
+          selector: '.infered',
+          style: {
+            'line-style': 'dashed',
+            'line-dash-pattern': [6,3],
+            'width' : '1px'
+          }
         }
+
 
 
       ]
@@ -277,6 +308,60 @@ const colors = [
             thoroughness: 7 // How much effort should be spent to produce a nice layout..
           },
           priority: function( edge ){ return null; }, // Edges with a non-nil value are skipped when greedy edge cycle breaking is enabled
+        },
+        "cose-bilkent": {
+          name: "cose-bilkent",
+          // Called on `layoutready`
+          ready: function () {
+          },
+          // Called on `layoutstop`
+          stop: function () {
+          },
+          // 'draft', 'default' or 'proof"
+          // - 'draft' fast cooling rate
+          // - 'default' moderate cooling rate
+          // - "proof" slow cooling rate
+          quality: 'default',
+          // Whether to include labels in node dimensions. Useful for avoiding label overlap
+          nodeDimensionsIncludeLabels: false,
+          // number of ticks per frame; higher is faster but more jerky
+          refresh: 30,
+          // Whether to fit the network view after when done
+          fit: true,
+          // Padding on fit
+          padding: 10,
+          // Whether to enable incremental mode
+          randomize: true,
+          // Node repulsion (non overlapping) multiplier
+          nodeRepulsion: 4500,
+          // Ideal (intra-graph) edge length
+          idealEdgeLength: 50,
+          // Divisor to compute edge forces
+          edgeElasticity: 0.45,
+          // Nesting factor (multiplier) to compute ideal edge length for inter-graph edges
+          nestingFactor: 0.1,
+          // Gravity force (constant)
+          gravity: 0.25,
+          // Maximum number of iterations to perform
+          numIter: 2500,
+          // Whether to tile disconnected nodes
+          tile: true,
+          // Type of layout animation. The option set is {'during', 'end', false}
+          animate: 'end',
+          // Duration for animate:end
+          animationDuration: 500,
+          // Amount of vertical space to put between degree zero nodes during tiling (can also be a function)
+          tilingPaddingVertical: 10,
+          // Amount of horizontal space to put between degree zero nodes during tiling (can also be a function)
+          tilingPaddingHorizontal: 10,
+          // Gravity range (constant) for compounds
+          gravityRangeCompound: 1.5,
+          // Gravity force (constant) for compounds
+          gravityCompound: 1.0,
+          // Gravity range (constant)
+          gravityRange: 3.8,
+          // Initial cooling factor for incremental layout
+          initialEnergyOnIncremental: 0.5
         }
       };
       this.setLayout("dagre");
@@ -321,13 +406,13 @@ const colors = [
 
       const topMenu =[
         {
-          name: 'delete', // html/text content to be displayed in the menu
+          name: 'remove', // html/text content to be displayed in the menu
           select: (ele) => { // a function to execute when the command is selected
-            this.deleteNode( ele ) // `ele` holds the reference to the active element
+            this.removeNode( ele ) // `ele` holds the reference to the active element
           }
         },
         {
-          name: 'crop', // html/text content to be displayed in the menu
+          name: 'remove others', // html/text content to be displayed in the menu
           select: (ele) => { // a function to execute when the command is selected
             this.cropNode( ele ) // `ele` holds the reference to the active element
           }
@@ -351,305 +436,412 @@ const colors = [
         console.log("init cy");
         this.cyRef = cy;
 
-        /*
-        if (this.companyMenu != undefined) {
-        this.companyMenu.destroy();
-      }
-      if (this.investorMenu != undefined) {
-      this.investorMenu.destroy();
-    }
-    if (this.typeMenu != undefined) {
-    this.typeMenu.destroy();
-  }
-  */
-  cy.removeAllListeners();
-  this.initMenu("Company",topMenu);
 
-  this.initMenu("Investor",topMenu);
+        cy.removeAllListeners();
+        this.initMenu("Company",topMenu);
 
-  this.initMenu("typeCompany",expandMenu);
+        this.initMenu("Investor",topMenu);
+
+        this.initMenu("typeCompany",expandMenu);
 
 
 
-  cy.on('mousedown', 'node', (evt)=>{
-    console.log( evt.type );
-    evt.cy.$id(evt.target.id()).unlock();
-    //this.cyRef.layout(this.layoutOptions).run();
-  });
-  cy.on('click', 'node', (evt)=>{
-    console.log( evt.type );
-    if (evt.target.isParent()) {
-      // a type is selected on the graph representing the schema
-      this.setState({"selectedList":evt.target.children(), "selectedType":undefined,"selectedNode":undefined});
-    } else if (evt.target.data()["dgraph.type"] == "type") {
-      // a type is selected on the graph representing the schema
-      this.setState({"selectedType":evt.target.data().name, "selectedNode":undefined, "selectedList":undefined});
-    } else { // a graph node is selected
-      this.setState({"selectedNode":evt.target, "selectedType":undefined, "selectedList":undefined});
-    }
-    //this.cyRef.layout(this.layoutOptions).run();
-  });
-
-  cy.on('dragfree', 'node', (evt)=>{
-    console.log( evt.type );
-    evt.cy.$id(evt.target.id()).lock();
-    evt.cy.layout(this.layoutOptions).run();
-  });
-
-
-
-}
-this.cyRef.layout(this.layoutOptions).run();
-}
-addEdge(elements,source,target,label) {
-  if ((source != undefined) && (target != undefined)) {
-    elements.push({ group: 'edges', data: { source: source, target: target, label: label, round: this.stepIndex } });
-  }
-}
-runQuery = (query) =>   {
-  this.stepIndex +=1;
-  return dgraph.runQuery(query)
-
-}
-buildExpandQuery(type,uid) {
-  var query = `{ list(func:uid(${uid})) { dgraph.type expand(_all_) { dgraph.type expand(_all_) }}}`
-  switch (type) {
-    case 'Company' :
-    query = `{
-      list(func:uid("${uid}")) {
-        uid
-        dgraph.type
-        investors: count(~in)
-        invetor:~in(orderdesc: OS, first:10) @normalize @cascade{
-          OS:OS
-          POS:POS
-          MKTVAL: MKTVAL
-          investor @filter(ge(count(invest),2)) {
-            dgraph.type:dgraph.type
-            id:uid
-            name:name
+        cy.on('mousedown', 'node', (evt)=>{
+          console.log( evt.type );
+          evt.cy.$id(evt.target.id()).unlock();
+          //this.cyRef.layout(this.layoutOptions).run();
+        });
+        cy.on('click', 'edge', (evt)=>{
+          console.log( `edge evet ${evt.type}` );
+          this.setState({"selectedNode":evt.target, "selectedType":undefined, "selectedList":undefined});
+          //this.cyRef.layout(this.layoutOptions).run();
+        });
+        cy.on('click', 'node', (evt)=>{
+          console.log( evt.type );
+          if (evt.target.isParent()) {
+            // a type is selected on the graph representing the schema
+            this.setState({"selectedList":evt.target.children(), "selectedType":undefined,"selectedNode":undefined});
+          } else if (evt.target.data()["dgraph.type"] == "type") {
+            // a type is selected on the graph representing the schema
+            this.setState({"selectedType":evt.target.data().name, "selectedNode":undefined, "selectedList":undefined});
+          } else { // a graph node is selected
+            this.setState({"selectedNode":evt.target, "selectedType":undefined, "selectedList":undefined});
           }
-        }
-      }
-    }`
+          //this.cyRef.layout(this.layoutOptions).run();
+        });
 
-    break;
-    case 'Investor' :
-    query = `{
-      list(func:uid(${uid})) {
-        uid
-        dgraph.type
-        company:~investor @normalize {
-          in {
-            dgraph.type:dgraph.type
-            id:uid
-            name:name
-            ticker:ticker
-            factsetid:factsetid
-            investors: count(~in)
-          }
-        }
+        cy.on('dragfree', 'node', (evt)=>{
+          console.log( evt.type );
+          evt.cy.$id(evt.target.id()).lock();
+          evt.cy.layout(this.layoutOptions).run();
+        });
+
+
 
       }
-    }`
 
-    break;
-  }
-  return query
-}
-expandType(ele,option) {
-  const type = ele.id();
-
-  var query = `{ list(func:type(${type})) { dgraph.type expand(_all_) }}`;
-
-  this.runQuery(query).then((r)=>this.analyseQueryResponse(r["data"],true))
-}
-deleteNode(ele) {
-    console.log(`delete node ${ele.id()}`);
-    ele.remove();
-}
-cropNode(ele) {
-  console.log(`crop node `);
-  const parent = ele.parent();
-  if (parent != undefined) {
-    for (var n of parent.children()) {
-      if (n.id() != ele.id()) {
-        n.remove()
-      }
-    }
-  }
-}
-
-expandNode(ele) {
-  const uid = ele.id();
-  const type = ele.data()['dgraph.type'][0];
-  var query = this.buildExpandQuery(type,uid);
-  this.runQuery(query).then((r)=>this.analyseQueryResponse(r["data"],false))
-  console.log(`round ${this.stepIndex}`);
-}
-addGraph(elements,e,compound) {
-  var uid =  e['id'] || e['uid'] ;
-
-  if (uid != undefined) {
-    var point = {};
-    for(var key in e) {
-      if(typeof e[key] == 'object') {
-        if (Array.isArray(e[key])) {
-          for (var child of e[key]) {
-            var targetUid = this.addGraph(elements,child,compound);
-            this.addEdge(elements,uid, targetUid, key)
-          }
-        } else {
-          var targetUid = this.addGraph(elements,e[key],compound);
-          this.addEdge(elements,uid, targetUid, key)
-        }
-      }
-      point[key]=e[key];
-    }
-    let existingNode = this.cyRef.getElementById(uid);
-    if (existingNode.length == 0) {
-      point['id'] = uid;
-      var classes = e["dgraph.type"] || ["default"];
-      if (point['name'] != undefined) {
-         point['label'] = 'name';
-      }
-      point['parent'] = "c"+compound;
-      elements.push({
-        group:"nodes",
-        data:point,
-        classes: classes,
-        position: { x: 100.0*Math.random(), y: 100.0*Math.random() } }
-      );
-      console.log(`adding node ${uid}`);
-    } else {
-      console.log(`node already exists ${uid}`);
-      if (existingNode.removed()) {
-        existingNode.restore()
-      }
-    }
-  } else { console.log(`node without id or uid`)}
-  return uid;
-}
-analyseQueryResponse( data , reset = true) {
-  var elements = [];
-  if (data) {
-    if (reset != true) {
-      elements = [...this.state.elements];
-    }
-    var firstKey, firstProp;
-
-
-    elements.push({
-      group:"nodes",
-      data:{id:'c'+this.stepIndex, name:this.stepIndex}})
-    for(var key in data) {
-      if(data.hasOwnProperty(key)) {
-        firstKey = key;
-
-        for (var e of data[key]) {
-          this.addGraph(elements,e,this.stepIndex);
-
-        }
-      }
-      //this.layout.run();
-    }
-    this.setState({elements: elements})
-    //  if (this.cyRef != undefined) {
-    //    this.cyRef.add(this.elements);
-    //  }
-  }
-}
-componentDidUpdate(prevProps, prevState, snapshot) {
-  console.log("GraphView did update");
-  if (this.props.value != prevProps.value) {
-    this.analyseQueryResponse(this.props.value.data);
-  }
-}
-buildSearchQuery(criteria) {
-  var query;
-  if (criteria.type == "Company") {
-    query = `{
-      all(func:anyoftext(name,"${criteria.name}")) @filter(type(${criteria.type})) { dgraph.type expand(_all_) investors: count(~in) }
-    }`
-  }
-  if (criteria.type == "Investor") {
-    query = `{
-      all(func:anyoftext(name,"${criteria.name}")) @filter(type(${criteria.type})) { dgraph.type expand(_all_) investments: count(invest) }
-    }`
-  }
-  return query;
-}
-searchNode(criteria) {
-  console.log("search");
-  var query = this.buildSearchQuery(criteria);
-  if (query) {
-    this.runQuery(query).then((r)=>this.analyseQueryResponse(r["data"],true))
-  }
-}
-infoSection() {
-  // display the card about the selected node
-  // it can be a node in the schema graph or the data graph
-  if (this.state.selectedNode != undefined) {
-    return <NodeInfo value={this.state.selectedNode} expand={(data)=>this.expandNode(data,'top 10')}/>
-  } else if (this.state.selectedType != undefined) {
-    return <NodeSelector type={this.state.selectedType} query={(data)=>this.searchNode(data)}/>
-  } else if (this.state.selectedList != undefined) {
-    return <NodeListInfo elements={this.state.selectedList}/>
-  }
-}
-setLayout(layoutName) {
-  if (this.layoutMap[layoutName] != undefined) {
-    this.layoutOptions = this.layoutMap[layoutName];
-    if (this.cyRef != undefined) {
-      this.cyRef.nodes(":locked").unlock();
       this.cyRef.layout(this.layoutOptions).run();
     }
+    addEdge(elements,source,target,label) {
+      if ((source != undefined) && (target != undefined)) {
+        const isTargetPresent = !this.isNodePresent(target);
+        console.log(`adding Edge ${label} from ${source} to ${target} (new : ${isTargetPresent})`);
+
+        let elt = { group: 'edges', data: { source: source, target: target, label: label, round: this.stepIndex } };
+
+        if (isTargetPresent) {
+          elt.classes = ["infered"]
+        }
+        elements.push(elt);
+      }
+    }
+    getUidsForType(type) {
+      return this.state.elements
+      .filter((e)=> { return ((e.group == "nodes") && (e.data["dgraph.type"]==type))})
+      .map((e) => e.data.id);
+
+    }
+    isNodePresent(uid) {
+      const test = this.state.elements.filter((e)=> { return (e.data["id"]==uid)})
+      return test.length > 0
+
+    }
+    removeNodes(idList) {
+      const elements = this.state.elements.filter((e)=> {
+        // remove nodes having an id in the list
+        // remove edges having source or target in the list
+        let remove = idList.includes(e.data["id"]) ||  idList.includes(e.data["source"]) ||  idList.includes(e.data["target"]);
+        return (!remove)
+      })
+      this.setState({elements: elements});
+
+    }
+    runQuery = (query) =>   {
+      this.stepIndex +=1;
+      return dgraph.runQuery(query)
+
+    }
+    buildExpandQuery(type,uid) {
+      var query = `{ list(func:uid(${uid})) { dgraph.type expand(_all_) { dgraph.type expand(_all_) }}}`
+      switch (type) {
+        case 'Company' :
+        let companies = this.getUidsForType("Company");
+        let companyInfo = '';
+        if (companies.length > 0 ) {
+          companyInfo = `invest @filter(uid_in(company,${companies.join()})) {
+            uid dgraph.type
+            name:uid
+            OS
+            POS
+            MKTVAL
+            company { dgraph.type uid }
+          }`
+        }
+        query = `{
+          list(func:uid(${uid})) {
+            uid
+            dgraph.type
+            investors: count(investments)
+            investor:investments(orderdesc: OS, first:10) {
+              uid dgraph.type
+              name:uid
+              OS
+              POS
+              MKTVAL
+              investor {
+                dgraph.type
+                uid
+                name
+                investments: count(invest)
+                ${companyInfo}
+              }
+            }
+          }
+        }`
+
+        break;
+        case 'Investor' :
+
+        query = `{
+          list(func:uid(${uid})) {
+            uid
+            dgraph.type
+            invest(first:25)  {
+              uid dgraph.type
+              name:uid
+              OS MKTVAL POS
+              company {
+                dgraph.type uid
+                name
+                ticker:ticker
+                factsetid:factsetid
+                investors: count(investments)
+
+              }
+            }
+
+          }
+        }`
+
+        break;
+      }
+      return query
+    }
+    expandType(ele,option) {
+      const type = ele.id();
+
+      var query = `{ list(func:type(${type}),first:25) { dgraph.type expand(_all_) investors: count(investments)}}`;
+
+      this.runQuery(query).then((r)=>this.analyseQueryResponse(query,r["data"],true))
+    }
+    removeNode(ele) {
+      console.log(`delete node ${ele.id()}`);
+      const uid = ele.id();
+      var elements = this.state.elements.filter((e)=>{
+        if (e.group == "nodes") {
+          return (e.data.id != uid)
+        } else {
+          return ((e.data.target != uid) && (e.data.source!= uid))
+        }
+      })
+      this.setState({elements:elements})
+      //  ele.remove();
+    }
+    cropNode(ele) {
+      console.log(`crop node `);
+      const parent = ele.parent();
+      if (parent != undefined) {
+        let idList = [];
+        for (var n of parent.children()) {
+          if (n.id() != ele.id()) {
+            idList.push(n.id());
+          }
+        }
+        this.removeNodes(idList)
+      }
+    }
+
+    expandNode(ele) {
+      const uid = ele.id();
+      const type = ele.data()['dgraph.type'];
+      var query = this.buildExpandQuery(type,uid);
+      this.runQuery(query).then((r)=>this.analyseQueryResponse(query,r["data"],false))
+      console.log(`round ${this.stepIndex}`);
+    }
+    isRelation(e) {
+      return (e['dgraph.type'][0] == "Investment")
+    }
+    undo() {
+      // remove last steps
+      this.setState({elements: this.exploration.undoLastStep() })
+
+    }
+    addGraph(elements,e,compound,level,parentUid,predicate) {
+      this.maxLevel=level;
+
+      var targetUid;
+      let uid =  e['id'] || e['uid'] ;
+      const type = e['dgraph.type'][0];
+      console.log(`Entering ${type} ${uid}`);
+      if (uid != undefined) {
+        var point = {};
+        for(var key in e) {
+          if (key!='dgraph.type') {
+            if(typeof e[key] == 'object') {
+              if (Array.isArray(e[key])) {
+                for (var child of e[key]) {
+                  targetUid = this.addGraph(elements,child,compound,level+1,uid,key);
+                  this.addEdge(elements,uid, targetUid, key)
+                }
+              } else {
+
+                if (!this.isRelation(e)) {
+                  targetUid = this.addGraph(elements,e[key],compound,level+1,uid,key);
+                  this.addEdge(elements,uid, targetUid, key)
+                } else {
+                  targetUid = this.addGraph(elements,e[key],compound,level,uid,key);
+                }
+              }
+            } else {
+              point[key]=e[key];
+            }
+          }
+        }
+        let existingNode = this.cyRef.getElementById(uid);
+        if (existingNode.length == 0) {
+          point['id'] = uid;
+          point['dgraph.type'] = type
+          if (!this.isRelation(e)) {
+            var classes = e["dgraph.type"] || ["default"];
+            if (point['name'] != undefined) {
+              point['label'] = 'name';
+            }
+            point['parent'] = "c"+compound+"-"+level;
+            elements.push({
+              group:"nodes",
+              data:point,
+              classes: classes
+            });
+            if (this.newNodeCounter[`${level}`] != undefined) {
+              this.newNodeCounter[`${level}`] +=1;
+            }  else {
+              this.newNodeCounter[`${level}`] = 1;
+            }
+            console.log(`adding node ${uid}`);
+          } else {
+            this.addEdge(elements,parentUid, targetUid, predicate);
+            uid = undefined;
+          }
+        } else {
+          if (this.isRelation(e))  {
+            uid = undefined;
+          }
+          console.log(`node already exists ${uid}`);
+        }
+      } else { console.log(`node without id or uid`)}
+      return uid;
+    }
+    analyseQueryResponse( query, data , reset = true) {
+      var elements = [];
+
+      this.newNodeCounter = {}
+      if (data) {
+        console.log("Result");
+        console.log(JSON.stringify(data,null,2));
+
+        var firstKey, firstProp;
+        for(var key in data) {
+          if(data.hasOwnProperty(key)) {
+            firstKey = key;
+
+            for (var e of data[key]) {
+              this.addGraph(elements,e,this.stepIndex,1);
+
+            }
+          }
+          //this.layout.run();
+        }
+        // add compound only if we found some nodes
+        if (Object.keys(this.newNodeCounter).length > 0) {
+          const compound = 'c'+this.stepIndex+"-"+1;
+          elements.push({
+            group:"nodes",
+            data:{id:compound, name:this.stepIndex}
+          })
+          for (var i = 2; i <= this.maxLevel; i++) {
+            if (this.newNodeCounter[`${i}`] > 0) {
+              elements.push({
+                group:"nodes",
+                data:{id:'c'+this.stepIndex+"-"+i, name:""+this.stepIndex+"-"+i, parent:compound}
+              })
+            }
+          }
+        }
+        if (elements.length > 0) {
+          this.exploration.addStep(this.stepIndex,query,elements,reset);
+          if (reset != true) {
+            elements = [...this.state.elements,...elements];
+          }
+          this.setState({elements: elements})
+        }
+
+        //  if (this.cyRef != undefined) {
+        //    this.cyRef.add(this.elements);
+        //  }
+      }
+    }
+    componentDidUpdate(prevProps, prevState, snapshot) {
+      console.log("GraphView did update");
+      if (this.props.value != prevProps.value) {
+        this.analyseQueryResponse("",this.props.value.data);
+      }
+    }
+    buildSearchQuery(criteria) {
+      var query;
+      if (criteria.type == "Company") {
+        query = `{
+          all(func:anyoftext(name,"${criteria.name}")) @filter(type(${criteria.type})) { dgraph.type expand(_all_) investors: count(investments) }
+        }`
+      }
+      if (criteria.type == "Investor") {
+        query = `{
+          all(func:anyoftext(name,"${criteria.name}")) @filter(type(${criteria.type})) { dgraph.type expand(_all_) investments: count(invest) }
+        }`
+      }
+      return query;
+    }
+    searchNode(criteria) {
+      console.log("search");
+      var query = this.buildSearchQuery(criteria);
+      if (query) {
+        this.runQuery(query).then((r)=>this.analyseQueryResponse(query,r["data"],true))
+      }
+    }
+    infoSection() {
+      // display the card about the selected node
+      // it can be a node in the schema graph or the data graph
+      if (this.state.selectedNode != undefined) {
+        return <NodeInfo value={this.state.selectedNode} expand={(data)=>this.expandNode(data,'top 10')}/>
+      } else if (this.state.selectedType != undefined) {
+        return <NodeSelector type={this.state.selectedType} query={(data)=>this.searchNode(data)}/>
+      } else if (this.state.selectedList != undefined) {
+        return <NodeListInfo elements={this.state.selectedList}/>
+      }
+    }
+    setLayout(layoutName) {
+      if (this.layoutMap[layoutName] != undefined) {
+        this.layoutOptions = this.layoutMap[layoutName];
+        if (this.cyRef != undefined) {
+          this.cyRef.nodes(":locked").unlock();
+          this.cyRef.layout(this.layoutOptions).run();
+        }
+      }
+
+    }
+    render() {
+
+      //const layout = { name: 'cose-bilkent' };
+      //if (this.elements.length >0 ) {
+      return (
+        <>
+        <Container  fluid className="pt-5">
+        <Row>
+
+        <Col xs={9}>
+
+        <Tabs
+        id="controlled-tab-example"
+        activeKey={this.state.key}
+        onSelect={(k) => this.setState({key:k})}
+        className="mb-3"
+        >
+
+        <Tab eventKey="graph" title="Graph">
+        <Selector options={[{name:"dagre"},{name:"cola"},{name:"klay"},{name:"cose-bilkent"}]} key={"layout"} onChange={(e)=>this.setLayout(e.name)}/>
+        <CytoscapeComponent  stylesheet={this.styles} elements={this.state.elements} layout={this.layoutOptions}  cy={(cy) => this.init(cy)} style={ { width: '800px', height: '600px' } } />;
+        </Tab>
+        <Tab eventKey="json" title="JSON">
+        <Form>
+        <Form.Group className="m-3" controlId="exampleForm.ControlTextarea1">
+        <Form.Label>Response</Form.Label>
+        <Form.Control as="textarea" value={this.state.json} rows={this.state.rows} readOnly />
+        </Form.Group>
+        </Form>
+        </Tab>
+
+        </Tabs>
+        </Col>
+        <Col>
+        {this.infoSection()}
+        <QuerySteps value={this.exploration} undo={()=>this.undo()}/>
+        </Col>
+        </Row>
+        </Container>
+        </>
+      )
+      //  }
+    }
   }
 
-}
-render() {
 
-  //const layout = { name: 'cose-bilkent' };
-  //if (this.elements.length >0 ) {
-  return (
-    <>
-    <Container  fluid className="pt-5">
-    <Row>
-
-    <Col xs={9}>
-
-    <Tabs
-    id="controlled-tab-example"
-    activeKey={this.state.key}
-    onSelect={(k) => this.setState({key:k})}
-    className="mb-3"
-    >
-
-    <Tab eventKey="graph" title="Graph">
-    <Selector options={[{name:"dagre"},{name:"cola"},{name:"klay"}]} key={"layout"} onChange={(e)=>this.setLayout(e.name)}/>
-    <CytoscapeComponent  stylesheet={this.styles} layout={this.layoutOptions} elements={this.state.elements} cy={(cy) => this.init(cy)} style={ { width: '800px', height: '600px' } } />;
-    </Tab>
-    <Tab eventKey="json" title="JSON">
-    <Form>
-    <Form.Group className="m-3" controlId="exampleForm.ControlTextarea1">
-    <Form.Label>Response</Form.Label>
-    <Form.Control as="textarea" value={this.state.json} rows={this.state.rows} readOnly />
-    </Form.Group>
-    </Form>
-    </Tab>
-
-    </Tabs>
-    </Col>
-    <Col>
-    {this.infoSection()}
-    </Col>
-    </Row>
-    </Container>
-    </>
-  )
-  //  }
-}
-}
-
-
-export default GraphView;
+  export default GraphView;

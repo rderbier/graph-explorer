@@ -1,5 +1,5 @@
 
-const dgraphEndpoint = "http://localhost:8080/query?timeout=20s&debug=true"
+const dgraphEndpoint = "/query?timeout=20s&debug=true"
 
 const runQuery = (query) =>   {
 
