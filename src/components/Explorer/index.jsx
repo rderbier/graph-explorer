@@ -106,10 +106,15 @@ const colors = [
 
         },
         {
+          selector: '.Company , .typeCompany',
+          style: {
+            'background-color': colorMap["Company"]
+          }
+        },
+        {
           selector: 'node',
           style: {
             label: 'data(name)',
-            borderWidth: '1px',
             borderOpacity: '50',
             textValign:'center',
             textHalign:'center',
@@ -117,6 +122,14 @@ const colors = [
             textWrap: 'wrap',
             width: '100px',
             height: '100px'
+          }
+
+        },
+        {
+          selector: '.visited',
+          style: {
+            borderWidth: '2px',
+            'border-color': 'red',
           }
         },
         {
@@ -141,22 +154,13 @@ const colors = [
         {
           selector: '.Industry',
           style: {
-            'background-color': colorMap["Industry"],
-            'border-color': colorMap["Industry"]
-          }
-        },
-        {
-          selector: '.Company , .typeCompany',
-          style: {
-            'background-color': colorMap["Company"],
-            'border-color': colorMap["Company"]
+            'background-color': colorMap["Industry"]
           }
         },
         {
           selector: '.Investor , .typeInvestor',
           style: {
-            'background-color': colorMap["Investor"],
-            'border-color': colorMap["Investor"]
+            'background-color': colorMap["Investor"]
           }
         },
         {
@@ -452,7 +456,7 @@ const colors = [
           //this.cyRef.layout(this.layoutOptions).run();
         });
         cy.on('click', 'edge', (evt)=>{
-          console.log( `edge evet ${evt.type}` );
+          console.log( `edge evt ${evt.type}` );
           this.setState({"selectedNode":evt.target, "selectedType":undefined, "selectedList":undefined});
           //this.cyRef.layout(this.layoutOptions).run();
         });
@@ -482,12 +486,17 @@ const colors = [
 
       this.cyRef.layout(this.layoutOptions).run();
     }
-    addEdge(elements,source,target,label) {
+    addEdge(elements,source,target,label, data) {
       if ((source != undefined) && (target != undefined)) {
         const isTargetPresent = !this.isNodePresent(target);
         console.log(`adding Edge ${label} from ${source} to ${target} (new : ${isTargetPresent})`);
 
-        let elt = { group: 'edges', data: { source: source, target: target, label: label, round: this.stepIndex } };
+        let elt = { group: 'edges' };
+        elt.data = data || {};
+        elt.data.source =source;
+        elt.data.target =target;
+        elt.data.label = label;
+        elt.data.round = this.stepIndex;
 
         if (isTargetPresent) {
           elt.classes = ["infered"]
@@ -501,9 +510,16 @@ const colors = [
       .map((e) => e.data.id);
 
     }
+    getNodeById(id) {
+      let result = this.state.elements.filter((e)=> { return (e.data["id"]==id)})
+      if (result != undefined) {
+          result = result[0]
+        }
+      return result
+    }
     isNodePresent(uid) {
-      const test = this.state.elements.filter((e)=> { return (e.data["id"]==uid)})
-      return test.length > 0
+      const test = this.getNodeById(uid);
+      return test != undefined;
 
     }
     removeNodes(idList) {
@@ -566,7 +582,7 @@ const colors = [
           list(func:uid(${uid})) {
             uid
             dgraph.type
-            invest(first:25)  {
+            invest(first:10,orderdesc:OS)  {
               uid dgraph.type
               name:uid
               OS MKTVAL POS
@@ -620,11 +636,16 @@ const colors = [
         this.removeNodes(idList)
       }
     }
+    setVisitedNode(ele) {
+      // add class to the visited node
+      ele.addClass("visited");
 
+    }
     expandNode(ele) {
       const uid = ele.id();
       const type = ele.data()['dgraph.type'];
       var query = this.buildExpandQuery(type,uid);
+      this.setVisitedNode(ele);
       this.runQuery(query).then((r)=>this.analyseQueryResponse(query,r["data"],false))
       console.log(`round ${this.stepIndex}`);
     }
@@ -689,7 +710,7 @@ const colors = [
             }
             console.log(`adding node ${uid}`);
           } else {
-            this.addEdge(elements,parentUid, targetUid, predicate);
+            this.addEdge(elements,parentUid, targetUid, predicate, point);
             uid = undefined;
           }
         } else {
@@ -818,7 +839,7 @@ const colors = [
 
         <Tab eventKey="graph" title="Graph">
         <Selector options={[{name:"dagre"},{name:"cola"},{name:"klay"},{name:"cose-bilkent"}]} key={"layout"} onChange={(e)=>this.setLayout(e.name)}/>
-        <CytoscapeComponent  stylesheet={this.styles} elements={this.state.elements} layout={this.layoutOptions}  cy={(cy) => this.init(cy)} style={ { width: '800px', height: '600px' } } />;
+        <CytoscapeComponent  stylesheet={this.styles} elements={this.state.elements} layout={this.layoutOptions}  cy={(cy) => this.init(cy)} style={ { background: '#ffe6ff', width: '1200px', height: '600px' } } />;
         </Tab>
         <Tab eventKey="json" title="JSON">
         <Form>
