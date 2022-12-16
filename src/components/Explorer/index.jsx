@@ -13,7 +13,8 @@ import NodeSelector from '../NodeSelector.jsx';
 import Selector from '../Selector.jsx';
 import Cytoscape from 'cytoscape';
 import cxtmenu from 'cytoscape-cxtmenu';
-import dgraph from '../../services/dgraph.jsx';
+import dgraph from '../../services/dgraph.js';
+import utils from '../../services/utils.js';
 import {Exploration} from '../../services/exploration.js';
 import CytoscapeComponent from 'react-cytoscapejs';
 import COSEBilkent from 'cytoscape-cose-bilkent';
@@ -29,29 +30,15 @@ Cytoscape.use(COSEBilkent);
 Cytoscape.use(cxtmenu);
 
 // colors from https://www.schemecolor.com/beautiful-pastels.php
-const colors = [
-  "rgb(165, 137, 175)",
-  "rgb(222, 164, 192)",
-  "rgb(236, 202, 170)",
-  "rgb(247, 237, 195)",
-  "rgb(173, 225, 212)",
-  "rgb(167, 187, 225)"]
 
-  const colorMap = {
-    "Sector" : colors[0],
-    "Industry" : colors[2],
-    "Company" : colors[1],
-    "Investment" : colors[3],
-    "Investor" : colors[4],
-    "Country" : colors[5],
-    "InvestorType" : colors[4]
-  }
 
 
   class GraphView extends React.Component {
 
     constructor(props) {
       super(props);
+      this.styles = utils.buildStyles(props.style);
+      
       this.schemaGraph = [
         { group:"nodes", data:{ id:"InvestorType", name:"InvestorType", "dgraph.type":"type"}, classes: ['category'] },
         { group:"nodes", data:{ id:"Sector", name:"Sector", "dgraph.type":"type"}, classes: ['category'] },
@@ -78,110 +65,7 @@ const colors = [
         data: props.value,
         elements: this.exploration.getElements()
       }
-      /*
-       * style
-       * reference https://js.cytoscape.org/#style
-       */
 
-      this.styles = [
-        {
-          selector: ':selected',
-          style: {
-            borderWidth: '3px',
-            borderOpacity: '50'
-          }
-        },
-        {
-          selector: 'edge',
-          style: {
-            'source-label': 'data(label)',
-            'target-arrow-shape': 'triangle',
-            'source-font-size': '12px',
-            'source-font-weight': 'normal',
-            'source-text-rotation': 'autorotate',
-            'width': '1px',
-            'line-color': 'black'
-
-          },
-
-
-        },
-        {
-          selector: '.Company , .typeCompany',
-          style: {
-            'background-color': colorMap["Company"]
-          }
-        },
-        {
-          selector: 'node',
-          style: {
-            label: 'data(name)',
-            borderOpacity: '50',
-            textValign:'center',
-            textHalign:'center',
-            textMaxWidth: '80px',
-            textWrap: 'wrap',
-            width: '100px',
-            height: '100px'
-          }
-
-        },
-        {
-          selector: '.visited',
-          style: {
-            borderWidth: '2px',
-            'border-color': 'red',
-          }
-        },
-        {
-          selector: '.category',
-          style: {
-            width: '20px',
-            height: '20px',
-            textValign:'top',
-            fontSize: '1em',
-          }
-        },
-        {
-          selector: '.relation',
-          style: {
-            shape: 'diamond',
-            width: '20px',
-            height: '20px',
-            textValign:'top',
-            fontSize: '1em',
-          }
-        },
-        {
-          selector: '.Industry',
-          style: {
-            'background-color': colorMap["Industry"]
-          }
-        },
-        {
-          selector: '.Investor , .typeInvestor',
-          style: {
-            'background-color': colorMap["Investor"]
-          }
-        },
-        {
-          selector: '.reverse',
-          style: {
-            curveStyle: 'bezier'
-          }
-        },
-        {
-          selector: '.infered',
-          style: {
-            'line-style': 'dashed',
-            'line-dash-pattern': [6,3],
-            'width' : '1px'
-          }
-        }
-
-
-
-      ]
 
       this.stepIndex = 0;
       this.layoutMap = {
