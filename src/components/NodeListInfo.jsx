@@ -43,7 +43,7 @@ class NodeListInfo extends React.Component {
       <Accordion defaultActiveKey="0" flush>
       {this.itemList()}
     </Accordion>
-     <CSVLink data={this.props.elements.map((e)=>e.data())}>Download</CSVLink>;
+     <CSVLink data={this.props.elements.map((e)=>e.data())}>Download</CSVLink>
       </>
     );
    }

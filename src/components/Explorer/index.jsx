@@ -1,5 +1,6 @@
 import React from 'react';
 import Container from 'react-bootstrap/Container';
+import Offcanvas from 'react-bootstrap/Offcanvas';
 import Row from 'react-bootstrap/Row';
 import Col from 'react-bootstrap/Col';
 import Form from 'react-bootstrap/Form';
@@ -71,7 +72,7 @@ const colors = [
         { group:"edges", data: { source: 'Investor', target: 'InvestorType' }}
       ];
       this.exploration = new Exploration();
-      this.exploration.addStep('Start', "", this.schemaGraph, true)
+      this.exploration.addStep('Business domain', "", this.schemaGraph, true)
       this.state = {
         selectedNode: undefined,
         data: props.value,
@@ -605,10 +606,10 @@ const colors = [
     }
     expandType(ele,option) {
       const type = ele.id();
-
+      this.resetSelection();
       var query = `{ list(func:type(${type}),first:25) { dgraph.type expand(_all_) investors: count(investments)}}`;
-
-      this.runQuery(query).then((r)=>this.analyseQueryResponse(query,r["data"],true))
+      var title = `expand ${type}`;
+      this.runQuery(query).then((r)=>this.analyseQueryResponse(query,r["data"],true,title))
     }
     removeNode(ele) {
       console.log(`delete node ${ele.id()}`);
@@ -642,12 +643,15 @@ const colors = [
 
     }
     expandNode(ele) {
+      this.resetSelection();
       const uid = ele.id();
       const type = ele.data()['dgraph.type'];
       var query = this.buildExpandQuery(type,uid);
       this.setVisitedNode(ele);
-      this.runQuery(query).then((r)=>this.analyseQueryResponse(query,r["data"],false))
+      const title = `Expand ${type} ${ele.data()['name']}`
+      this.runQuery(query).then((r)=>this.analyseQueryResponse(query,r["data"],false,title))
       console.log(`round ${this.stepIndex}`);
+
     }
     isRelation(e) {
       return (e['dgraph.type'][0] == "Investment")
@@ -722,7 +726,7 @@ const colors = [
       } else { console.log(`node without id or uid`)}
       return uid;
     }
-    analyseQueryResponse( query, data , reset = true) {
+    analyseQueryResponse( query, data , reset = true, title) {
       var elements = [];
 
       this.newNodeCounter = {}
@@ -759,7 +763,8 @@ const colors = [
           }
         }
         if (elements.length > 0) {
-          this.exploration.addStep(this.stepIndex,query,elements,reset);
+          if (title == undefined) { title = this.stepIndex}
+          this.exploration.addStep(title,query,elements,reset);
           if (reset != true) {
             elements = [...this.state.elements,...elements];
           }
@@ -793,9 +798,11 @@ const colors = [
     }
     searchNode(criteria) {
       console.log("search");
+      var title = "search node";
+      this.resetSelection();
       var query = this.buildSearchQuery(criteria);
       if (query) {
-        this.runQuery(query).then((r)=>this.analyseQueryResponse(query,r["data"],true))
+        this.runQuery(query).then((r)=>this.analyseQueryResponse(query,r["data"],true,title))
       }
     }
     infoSection() {
@@ -818,6 +825,9 @@ const colors = [
         }
       }
 
+    }
+    resetSelection() {
+      this.setState({"selectedNode":undefined, "selectedType":undefined, "selectedList":undefined});
     }
     render() {
 
@@ -853,7 +863,18 @@ const colors = [
         </Tabs>
         </Col>
         <Col>
-        {this.infoSection()}
+        <Offcanvas
+           placement='end'
+           show={(this.state.selectedNode != undefined)||(this.state.selectedType != undefined)||(this.state.selectedList != undefined)}
+           onHide={()=>this.resetSelection()}>
+       <Offcanvas.Header closeButton>
+         <Offcanvas.Title>Selection</Offcanvas.Title>
+       </Offcanvas.Header>
+       <Offcanvas.Body>
+         {this.infoSection()}
+       </Offcanvas.Body>
+     </Offcanvas>
+
         <QuerySteps value={this.exploration} undo={()=>this.undo()}/>
         </Col>
         </Row>
