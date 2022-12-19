@@ -38,26 +38,7 @@ Cytoscape.use(cxtmenu);
     constructor(props) {
       super(props);
       this.styles = utils.buildStyles(props.style);
-      
-      this.schemaGraph = [
-        { group:"nodes", data:{ id:"InvestorType", name:"InvestorType", "dgraph.type":"type"}, classes: ['category'] },
-        { group:"nodes", data:{ id:"Sector", name:"Sector", "dgraph.type":"type"}, classes: ['category'] },
-        { group:"nodes", data:{ id:"Industry", name:"Industry", "dgraph.type":"type"}, classes: ['category'] },
-        { group:"nodes", data:{ id:"Company", name:"Company", "dgraph.type":"type"}, classes: ['typeCompany'] },
-        { group:"nodes", data:{ id:"Investment", name:"Investment", "dgraph.type":"type"}, classes: ['relation'] },
-        { group:"nodes", data:{ id:"Investor", name:"Investor", "dgraph.type":"type"}, classes: ['typeInvestor'] },
-        { group:"nodes", data:{ id:"Country", name:"Country", "dgraph.type":"type"}, classes: ['typeCountry'] },
-
-
-
-        { group:"edges", data: { source: 'Company', target: 'Investor', label: 'investors' },classes: ['reverse'] },
-        { group:"edges", data: { source: 'Investment', target: 'Company', label: 'in' } },
-        { group:"edges", data: { source: 'Investor', target: 'Investment', label: 'invest' } },
-        { group:"edges", data: { source: 'Company', target: 'Industry' }},
-        { group:"edges", data: { source: 'Company', target: 'Country', label: 'is in' }},
-        { group:"edges", data: { source: 'Industry', target: 'Sector'}},
-        { group:"edges", data: { source: 'Investor', target: 'InvestorType' }}
-      ];
+      this.schemaGraph = utils.buildSchemaGraph(props.ontology);
       this.exploration = new Exploration();
       this.exploration.addStep('Business domain', "", this.schemaGraph, true)
       this.state = {

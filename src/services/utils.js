@@ -1,7 +1,7 @@
 /*
- * style
- * reference https://js.cytoscape.org/#style
- */
+* style
+* reference https://js.cytoscape.org/#style
+*/
 
 function buildStyles(graphStyle) {
   // graphStyle has colors and colorMap
@@ -89,17 +89,36 @@ function buildStyles(graphStyle) {
 
   ]
 
-  for (var type in graphStyle.colorMap) {
-    styles.push({
-      selector: `.${type}, .type${type}`,
-      style: {
-        'background-color': graphStyle.colors[graphStyle.colorMap[type]]
-      }
-    })
+  for (var type in graphStyle.entities) {
+    if (graphStyle.entities[type].style["background-color"] != undefined) {
+      styles.push({
+        selector: `.${type}, .type${type}`,
+        style: {
+          'background-color': graphStyle.colors[graphStyle.entities[type].style["background-color"]]
+        }
+      })
+    }
   }
 
   return styles;
 }
 
-
-export default {buildStyles}
+function buildSchemaGraph(ontology) {
+  let schemaGraph = [
+  ];
+  for (var entity in ontology.entities) {
+    var elt = { group:"nodes", data:{ id:`${entity}`, name:`${entity}`, "dgraph.type":"type"}, classes: [`type${entity}`] };
+    if ( ontology.entities[entity].type != undefined ) {
+      elt.classes.push(`${ontology.entities[entity].type}`)
+    }
+    schemaGraph.push(elt)
+    if (ontology.entities[entity].relations != undefined) {
+      Object.entries(ontology.entities[entity].relations).forEach(([key, relation]) => {
+        var rel = { group:"edges", data: { source: `${entity}`, target: `${relation.entity}`, label: `${key}` } }
+        schemaGraph.push(rel)
+      })
+    }
+  }
+  return schemaGraph
+}
+export default {buildStyles, buildSchemaGraph}
