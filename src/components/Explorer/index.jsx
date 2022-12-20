@@ -47,8 +47,6 @@ Cytoscape.use(cxtmenu);
         data: props.value,
         elements: this.exploration.getElements()
       }
-
-
       this.stepIndex = 0;
       this.setLayout("dagre");
     }
@@ -220,7 +218,7 @@ Cytoscape.use(cxtmenu);
 
     }
     buildExpandQuery(type,uid) {
-      var query = `{ list(func:uid(${uid})) { dgraph.type expand(_all_) { dgraph.type expand(_all_) }}}`
+      var query = `{ list(func:uid(${uid})) { dgraph.type uid expand(_all_) { dgraph.type expand(_all_) }}}`
       switch (type) {
         case 'Company' :
         let companies = this.getUidsForType("Company");
@@ -288,7 +286,7 @@ Cytoscape.use(cxtmenu);
     expandType(ele,option) {
       const type = ele.id();
       this.resetSelection();
-      var query = `{ list(func:type(${type}),first:25) { dgraph.type expand(_all_) investors: count(investments)}}`;
+      var query = `{ list(func:type(${type}),first:25) { dgraph.type uid expand(_all_) investors: count(investments)}}`;
       var title = `expand ${type}`;
       this.runQuery(query).then((r)=>this.analyseQueryResponse(query,r["data"],true,title))
     }
@@ -467,12 +465,12 @@ Cytoscape.use(cxtmenu);
       var query;
       if (criteria.type == "Company") {
         query = `{
-          all(func:anyoftext(name,"${criteria.name}")) @filter(type(${criteria.type})) { dgraph.type expand(_all_) investors: count(investments) }
+          all(func:anyoftext(name,"${criteria.name}")) @filter(type(${criteria.type})) { dgraph.type uid expand(_all_) investors: count(investments) }
         }`
       }
       if (criteria.type == "Investor") {
         query = `{
-          all(func:anyoftext(name,"${criteria.name}")) @filter(type(${criteria.type})) { dgraph.type expand(_all_) investments: count(invest) }
+          all(func:anyoftext(name,"${criteria.name}")) @filter(type(${criteria.type})) { dgraph.type uid expand(_all_) investments: count(invest) }
         }`
       }
       return query;
