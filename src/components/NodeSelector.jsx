@@ -25,7 +25,7 @@ class NodeSelector extends React.Component {
             placeholder="search string"
             onChange={(event)=>this.state.name = event.target.value} />
       </Form.Group>
-      <Button className="mt-2" variant="secondary" size="sm" onClick={() => this.props.query(this.state)}>Search</Button>
+      <Button className="mt-2" type="submit" variant="secondary" size="sm" onClick={() => this.props.query(this.state)}>Search</Button>
     </Form>
     )
 
