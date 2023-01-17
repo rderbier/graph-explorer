@@ -10,24 +10,39 @@ class NodeSelector extends React.Component {
   constructor(props) {
     super(props);
     this.state = {
-      type : this.props.type
+      type : this.props.type,
+      schema : this.props.schema,
+      criteria : {}
     };
   }
   generateForm() {
-
+   if (this.state.schema.properties != undefined) {
     return (
     <Form>
       <Form.Group  controlId="id1">
-        <Form.Label>Name</Form.Label>
-        <Form.Control
-            required
-            type="text"
-            placeholder="search string"
-            onChange={(event)=>this.state.name = event.target.value} />
+      {Object.keys(this.state.schema.properties).map((key)=> {
+        if ( this.state.schema.properties[key].searchable == true) {
+           return (
+             <>
+             <Form.Label>{key}</Form.Label>
+             <Form.Control
+                 required
+                 type={this.state.schema.properties[key].type}
+                 placeholder="search string"
+                 onChange={(event)=>this.state.criteria[key] = { operator: this.state.schema.properties[key].operators[0], value: event.target.value}} />
+           </>
+         )
+        }
+      })}
+
+
       </Form.Group>
       <Button className="mt-2" type="submit" variant="secondary" size="sm" onClick={() => this.props.query(this.state)}>Search</Button>
     </Form>
     )
+  } else {
+    return ( <b>No searchable properties in the ontology</b>)
+  }
 
 
   }

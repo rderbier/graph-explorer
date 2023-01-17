@@ -5,11 +5,21 @@ import Container from 'react-bootstrap/Container';
 import Explorer from '../Explorer';
 import AppHeader from '../AppHeader';
 import Credentials from '../Credentials';
-
+//
+// searchable properties must have at least one operator -> maybe set it to eq by default
+// property can be a property of a linked nodes if the path is through 1-1 -> to be checked
 const ontology = {
   entities : {
     "Company" : {
       type:"entity",
+      properties : {
+         "name" : { type:"text", searchable: true, operators:["anyoftext"]},
+         "ticker" : { type:"text", searchable: true, operators:["eq"]},
+         "factsetid" : { type:"text", searchable: true, operators:["eq"]},
+         "country" : { type:"text", searchable: true, path:["country","name"], operators:["eq"]},
+         "industry" : { type:"text", searchable: true, path:["industry","name"], operators:["eq"]},
+         "sector" : { type:"text", searchable: true, path:["industry","sector","name"], operators:["eq"]}
+      },
       relations : {
         "investors" : { isMany:true, entity:"Investor", relationNode:"Investment"},
         "industry" : { entity:"Industry"},
@@ -29,7 +39,9 @@ const ontology = {
         "type" : { entity:"InvestorType"}
       }
     },
-    "Country" : { type:"entity"},
+    "Country" : {
+      type:"category"
+    },
     "Industry" : {
       type:"category",
       parent:"Sector",
@@ -37,8 +49,13 @@ const ontology = {
         "sector" : { entity:"Sector"}
       }
     },
-    "Sector" : { type:"category"},
-    "InvestorType" : { type:"category"}
+    "Sector" : {
+      type:"category",
+      label:"name"
+    },
+    "InvestorType" : {
+      type:"category"
+    }
   }
 }
 const style = {

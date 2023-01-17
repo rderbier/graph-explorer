@@ -12,10 +12,31 @@ const runQuery = (query) =>   {
       method: 'POST',
       headers: {'Content-Type':'application/json','Authorization':key},
       body: JSON.stringify(payload),
-    }).then( (response) =>response.json())
+    }).then( (response) => response.json()).then((j)=> {
+
+      console.log(`response ${JSON.stringify(j)}`);
+      return j})
 
 
 }
+const getCategories = (ontology) =>{
+  var query = "";
+  Object.entries(ontology.entities).forEach(
+    ([key, value]) => {
+      console.log(key, value);
+      if ((value.type == "category") && (value.label != undefined)) {
+        query += `  ${key}(func:type(${key})) { uid label:${value.label}} \n`;
+      }
+    }
+  );
+  query = "{ "+query+"}";
+  return runQuery(query)
+  .then((r)=>{
+    console.log(`response ${r}`);
+  })
+
+  }
+
 const isConnected = (k) =>{
   key = k;
   return runQuery("schema {}")
@@ -34,4 +55,4 @@ const isConnected = (k) =>{
 
 
 
-export default {runQuery,isConnected}
+export default {runQuery,isConnected, getCategories}

@@ -40,6 +40,7 @@ Cytoscape.use(cxtmenu);
       super(props);
       this.styles = utils.buildStyles(props.style);
       this.schemaGraph = utils.buildSchemaGraph(props.ontology);
+      this.categories = dgraph.getCategories(props.ontology);
       this.exploration = new Exploration();
       this.exploration.addStep('Business domain', "", this.schemaGraph, true)
       this.state = {
@@ -101,6 +102,7 @@ Cytoscape.use(cxtmenu);
             this.cropNode( ele ) // `ele` holds the reference to the active element
           }
         },
+        // TODO : dynamically add the expand on the different relationships (1-n)
         {
           name: 'expand', // html/text content to be displayed in the menu
           select: (ele) => { // a function to execute when the command is selected
@@ -462,20 +464,32 @@ Cytoscape.use(cxtmenu);
       }
     }
     buildSearchQuery(criteria) {
+      // criteria has a list of property operator value (value2) which are ANDed to search.
+      // currently supporting "anyoftext"
       var query;
-      if (criteria.type == "Company") {
+      if ((criteria.criteria != undefined) && (Object.keys(criteria.criteria).length > 0)) {
+        var property = Object.keys(criteria.criteria)[0];
+        var c = criteria.criteria[Object.keys(criteria.criteria)[0]]; // just using first criteria at the moment
         query = `{
-          all(func:anyoftext(name,"${criteria.name}")) @filter(type(${criteria.type})) { dgraph.type uid expand(_all_) investors: count(investments) }
+          all(func:${c.operator}(${property},"${c.value}")) @filter(type(${criteria.type})) { dgraph.type uid expand(_all_) investors: count(investments) }
         }`
       }
-      if (criteria.type == "Investor") {
-        query = `{
-          all(func:anyoftext(name,"${criteria.name}")) @filter(type(${criteria.type})) { dgraph.type uid expand(_all_) investments: count(invest) }
-        }`
-      }
+
+      // if (criteria.type == "Company") {
+      //   query = `{
+      //     all(func:anyoftext(name,"${criteria.name}")) @filter(type(${criteria.type})) { dgraph.type uid expand(_all_) investors: count(investments) }
+      //   }`
+      // }
+      // if (criteria.type == "Investor") {
+      //   query = `{
+      //     all(func:anyoftext(name,"${criteria.name}")) @filter(type(${criteria.type})) { dgraph.type uid expand(_all_) investments: count(invest) }
+      //   }`
+      // }
       return query;
     }
     searchNode(criteria) {
+      // criteria has a list of property operator value (value2) which are ANDed to search.
+      // operator is the name of dgraph function (anyoftext, eq, ...)
       console.log("search");
       var title = "search node";
       this.resetSelection();
@@ -490,7 +504,7 @@ Cytoscape.use(cxtmenu);
       if (this.state.selectedNode != undefined) {
         return <NodeInfo value={this.state.selectedNode} expand={(data)=>this.expandNode(data,'top 10')}/>
       } else if (this.state.selectedType != undefined) {
-        return <NodeSelector type={this.state.selectedType} query={(data)=>this.searchNode(data)}/>
+        return <NodeSelector type={this.state.selectedType} schema={this.props.ontology.entities[this.state.selectedType]}query={(data)=>this.searchNode(data)}/>
       } else if (this.state.selectedList != undefined) {
         return <NodeListInfo elements={this.state.selectedList}/>
       }
