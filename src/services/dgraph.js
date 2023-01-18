@@ -1,6 +1,32 @@
 
 const dgraphEndpoint = "/query?timeout=20s&debug=true"
 var key
+var schema
+var ontology
+/* schema format
+  {
+   "schema": [
+      {
+        "predicate": "FSYMID",
+        "type": "string",
+        "index": true,
+        "tokenizer": [
+          "hash"
+        ]
+      },...],
+   "types": [
+    {
+      "name": "Company",
+      "fields": [
+        {
+          "name": "factsetid"
+        },
+        ...
+      ],
+
+    }]
+  }
+*/
 const runQuery = (query) =>   {
 
   console.log(`Run query ${query}`);
@@ -37,11 +63,94 @@ const getCategories = (ontology) =>{
 
   }
 
+const getOntology = ()=>{
+   return ontology;
+}
+const buildOntology = () => {
+  /* TO DO : build from schema */
+  ontology = {
+    entities : {
+      "Company" : {
+        type:"entity",
+        properties : {
+           "name" : { type:"text", searchable: true, operators:["anyoftext"]},
+           "ticker" : { type:"text", searchable: true, operators:["eq"]},
+           "factsetid" : { type:"text", searchable: true, operators:["eq"]},
+           "country" : { type:"text", searchable: true, path:["country","name"], operators:["eq"]},
+           "industry" : { type:"text", searchable: true, path:["industry","name"], operators:["eq"]},
+           "sector" : { type:"text", searchable: true, path:["industry","sector","name"], operators:["eq"]}
+        },
+        relations : {
+          "investors" : {
+            isArray:true,
+            entity:"Investor",
+            relationNode:{predicate:"investments",type:"Investment",out_predicate:"investor"},
+            expand:{order:"orderdesc",sort:"OS"}
+          },
+          "industry" : { entity:"Industry"},
+          "country" : { entity:"Country"}
+        }
+      },
+      "Investment" : {
+        type:"relation",
+        relations : {
+          "in" : { isArray:false, entity:"Company"}
+        }
+      },
+      "Investor" : {
+        type:"entity",
+        properties : {
+           "name" : { type:"text", searchable: true, operators:["anyoftext"]}
+        },
+        relations : {
+          "companies" : {
+            isArray:true,
+            entity:"Company",
+            relationNode:{predicate:"invest",type:"Investment",out_predicate:"company"},
+            expand:{order:"orderdesc",sort:"OS"}
+          },
+          "type" : { entity:"InvestorType"}
+        }
+      },
+      "Country" : {
+        type:"category",
+        properties : {
+           "name" : { type:"text", searchable: true, operators:["anyoftext"]}
+         }
+      },
+      "Industry" : {
+        type:"category",
+        parent:"Sector",
+        properties : {
+           "name" : { type:"text", searchable: true, operators:["anyoftext"]}
+         },
+        relations : {
+          "sector" : { entity:"Sector"}
+        }
+      },
+      "Sector" : {
+        type:"category",
+        label:"name",
+        properties : {
+           "name" : { type:"text", searchable: true, operators:["anyoftext"]}
+         }
+      },
+      "InvestorType" : {
+        type:"category",
+        properties : {
+           "name" : { type:"text", searchable: true, operators:["anyoftext"]}
+         }
+      }
+    }
+  }
+}
 const isConnected = (k) =>{
   key = k;
   return runQuery("schema {}")
   .then((r)=>{
     console.log(`response ${r}`);
+    schema = r.data;
+    buildOntology();
     if (r.errors != undefined) {
       throw(r.errors[0].message)
     } else {
@@ -55,4 +164,4 @@ const isConnected = (k) =>{
 
 
 
-export default {runQuery,isConnected, getCategories}
+export default {runQuery,isConnected, getCategories, getOntology}

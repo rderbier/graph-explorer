@@ -5,59 +5,11 @@ import Container from 'react-bootstrap/Container';
 import Explorer from '../Explorer';
 import AppHeader from '../AppHeader';
 import Credentials from '../Credentials';
+import dgraph from '../../services/dgraph.js';
 //
 // searchable properties must have at least one operator -> maybe set it to eq by default
 // property can be a property of a linked nodes if the path is through 1-1 -> to be checked
-const ontology = {
-  entities : {
-    "Company" : {
-      type:"entity",
-      properties : {
-         "name" : { type:"text", searchable: true, operators:["anyoftext"]},
-         "ticker" : { type:"text", searchable: true, operators:["eq"]},
-         "factsetid" : { type:"text", searchable: true, operators:["eq"]},
-         "country" : { type:"text", searchable: true, path:["country","name"], operators:["eq"]},
-         "industry" : { type:"text", searchable: true, path:["industry","name"], operators:["eq"]},
-         "sector" : { type:"text", searchable: true, path:["industry","sector","name"], operators:["eq"]}
-      },
-      relations : {
-        "investors" : { isArray:true, entity:"Investor", relationNode:{predicate:"investments",type:"Investment",out_predicate:"investor"}},
-        "industry" : { entity:"Industry"},
-        "country" : { entity:"Country"}
-      }
-    },
-    "Investment" : {
-      type:"relation",
-      relations : {
-        "in" : { isArray:false, entity:"Company"}
-      }
-    },
-    "Investor" : {
-      type:"entity",
-      relations : {
-        "invest" : { isArray:true, entity:"Investment"},
-        "type" : { entity:"InvestorType"}
-      }
-    },
-    "Country" : {
-      type:"category"
-    },
-    "Industry" : {
-      type:"category",
-      parent:"Sector",
-      relations : {
-        "sector" : { entity:"Sector"}
-      }
-    },
-    "Sector" : {
-      type:"category",
-      label:"name"
-    },
-    "InvestorType" : {
-      type:"category"
-    }
-  }
-}
+
 const style = {
   colors: [
     "rgb(165, 137, 175)",
@@ -112,14 +64,21 @@ const style = {
       super(props);
       this.state= { connected :false};
       }
+  start(state) {
+     if (state == true) {
+       this.setState({connected:state, ontology:dgraph.getOntology()})
+     } else {
+       this.setState({connected:state})
+     }
 
+  }
   render() {
     if (!this.state.connected) {
       return (<>
       <Container fluid >
       <AppHeader connexion="localhost:8080"/>
       <Container fluid className="pt-5">
-      <Credentials onConnect={(state)=>this.setState({connected:state}) }/>
+      <Credentials onConnect={(state)=>this.start(state) }/>
       </Container>
       </Container>
 
@@ -131,7 +90,7 @@ const style = {
         <Container fluid >
         <AppHeader connexion="localhost:8080"/>
         <Container fluid className="pt-5">
-        <Explorer style={style} ontology={ontology}/>
+        <Explorer style={style} ontology={this.state.ontology}/>
         </Container>
         </Container>
 

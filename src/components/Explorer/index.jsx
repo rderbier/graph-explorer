@@ -236,8 +236,19 @@ runQuery = (query) =>   {
   return dgraph.runQuery(query)
 
 }
-buildExpandQuery(type,uid) {
+buildExpandQuery(type,uid,relation) {
+  /* expand a node uid
+     use type and ontology.entities[type] to build the query
+  */
   var query = `{ list(func:uid(${uid})) { dgraph.type uid expand(_all_) { dgraph.type expand(_all_) }}}`
+  var entity = this.props.ontology.entities[type];
+  if ((entity!= undefined) && (entity.relations[relation]!=undefined)) {
+    const rel = entity.relations[relation];
+    query = `{ list(func:uid(${uid})) { uid dgraph.type ${relation} (${rel.expand.order}:${rel.expand.sort}, first:${rel.expand.first}) {
+          uid dgraph.type
+    }
+  }`
+}
   switch (type) {
     case 'Company' :
     let companies = this.getUidsForType("Company");
@@ -302,29 +313,34 @@ buildExpandQuery(type,uid) {
   }
   return query
 }
+infoSet(entity) {
+  var infoSet = "dgraph.type uid ";
+  if (entity.properties) {
+    Object.keys(entity.properties).forEach((key) => {
+      infoSet += ` ${key} `;
+    })
+  }
+  if (entity.relations) {
+    Object.entries(entity.relations).forEach(([key,value]) => {
+      if (value.isArray == true) {
+         if (value.relationNode != undefined) {  // count the predicate to the relationNode
+           infoSet += `${key}:count(${value.relationNode.predicate}) `;
+         } else {
+           infoSet += `${key}:count(${key}) `;
+         }
+      }
+    })
+  }
+  return infoSet;
+}
 expandType(ele,option) {
   const type = ele.id();
   this.resetSelection();
   var entity = this.props.ontology.entities[type];
   if (entity!= undefined) {
     var query = `{ list(func:type(${type}),first:25) { dgraph.type uid `;
-      if (entity.properties) {
-        Object.keys(entity.properties).forEach((key) => {
-          query += ` ${key} `;
-        })
-      }
-      if (entity.relations) {
-        Object.entries(entity.relations).forEach(([key,value]) => {
-          if (value.isArray == true) {
-             if (value.relationNode != undefined) {  // count the predicate to the relationNode
-               query += `${key}:count(${value.relationNode.predicate}) `;
-             } else {
-               query += `${key}:count(${key}) `;
-             }
-          }
-        })
-      }
-      query += '}}';
+
+      query += this.infoSet(entity)+'}}';
     var title = `expand ${type}`;
     this.runQuery(query).then((r)=>this.analyseQueryResponse(query,r["data"],true,title))
   }
@@ -508,8 +524,9 @@ buildSearchQuery(criteria) {
     var property = Object.keys(criteria.criteria)[0];
     var c = criteria.criteria[Object.keys(criteria.criteria)[0]]; // just using first criteria at the moment
     query = `{
-      all(func:${c.operator}(${property},"${c.value}")) @filter(type(${criteria.type})) { dgraph.type uid expand(_all_) investors: count(investments) }
-    }`
+      all(func:${c.operator}(${property},"${c.value}")) @filter(type(${criteria.type})) { `;
+    query += this.infoSet(this.props.ontology.entities[criteria.type]);
+    query+=` } }`
   }
 
   // if (criteria.type == "Company") {

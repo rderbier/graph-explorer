@@ -2,7 +2,7 @@
 ## Goal
 
 Allow non-technical people to navigate the graph step by step and get insights in the form of
-recommendations (finding a subset of 'interrestings' data) or charts. 
+recommendations (finding a subset of 'interrestings' data) or charts.
 
 ## Software stack
 - This project was bootstrapped with [Create React App](https://github.com/facebook/create-react-app).
@@ -10,7 +10,12 @@ recommendations (finding a subset of 'interrestings' data) or charts.
 - [react-cytoscapejs](https://github.com/plotly/react-cytoscapejs)
 
 
+## TO DO
+Search  "TO DO" in the source code.
 
+- improve history by adding the remove others or remove node steps (using node position in the list to identofy the node)
+- add search on categories
+- compute the expand query automatically
 ## Available Scripts
 
 In the project directory, you can run:

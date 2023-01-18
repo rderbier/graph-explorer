@@ -106,6 +106,9 @@ function buildStyles(graphStyle) {
 function buildSchemaGraph(ontology) {
   let schemaGraph = [
   ];
+  // create a UI node for each entity in the ontology with data dgraph.type=type id and name
+  // and CSS class type<entityType> and a class for the type of entity (entity or relation) - (when an entity is used as a relation)
+  //
   for (var entity in ontology.entities) {
     var elt = { group:"nodes", data:{ id:`${entity}`, name:`${entity}`, "dgraph.type":"type"}, classes: [`type${entity}`] };
     if ( ontology.entities[entity].type != undefined ) {
@@ -114,7 +117,12 @@ function buildSchemaGraph(ontology) {
     schemaGraph.push(elt)
     if (ontology.entities[entity].relations != undefined) {
       Object.entries(ontology.entities[entity].relations).forEach(([key, relation]) => {
-        var rel = { group:"edges", data: { source: `${entity}`, target: `${relation.entity}`, label: `${key}` } }
+        var rel
+        if (relation.relationNode != undefined) {
+           rel = { group:"edges", data: { source: `${entity}`, target: `${relation.relationNode.type}`, label: `${relation.relationNode.predicate}` } }
+        } else {
+         rel = { group:"edges", data: { source: `${entity}`, target: `${relation.entity}`, label: `${key}` } }
+        }
         schemaGraph.push(rel)
       })
     }
