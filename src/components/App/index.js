@@ -21,7 +21,7 @@ const ontology = {
          "sector" : { type:"text", searchable: true, path:["industry","sector","name"], operators:["eq"]}
       },
       relations : {
-        "investors" : { isMany:true, entity:"Investor", relationNode:"Investment"},
+        "investors" : { isArray:true, entity:"Investor", relationNode:"Investment"},
         "industry" : { entity:"Industry"},
         "country" : { entity:"Country"}
       }
@@ -29,13 +29,13 @@ const ontology = {
     "Investment" : {
       type:"relation",
       relations : {
-        "in" : { isMany:false, entity:"Company"}
+        "in" : { isArray:false, entity:"Company"}
       }
     },
     "Investor" : {
       type:"entity",
       relations : {
-        "invest" : { isMany:false, entity:"Investment"},
+        "invest" : { isArray:true, entity:"Investment"},
         "type" : { entity:"InvestorType"}
       }
     },
