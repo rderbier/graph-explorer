@@ -305,9 +305,29 @@ buildExpandQuery(type,uid) {
 expandType(ele,option) {
   const type = ele.id();
   this.resetSelection();
-  var query = `{ list(func:type(${type}),first:25) { dgraph.type uid expand(_all_) investors: count(investments)}}`;
-  var title = `expand ${type}`;
-  this.runQuery(query).then((r)=>this.analyseQueryResponse(query,r["data"],true,title))
+  var entity = this.props.ontology.entities[type];
+  if (entity!= undefined) {
+    var query = `{ list(func:type(${type}),first:25) { dgraph.type uid `;
+      if (entity.properties) {
+        Object.keys(entity.properties).forEach((key) => {
+          query += ` ${key} `;
+        })
+      }
+      if (entity.relations) {
+        Object.entries(entity.relations).forEach(([key,value]) => {
+          if (value.isArray == true) {
+             if (value.relationNode != undefined) {  // count the predicate to the relationNode
+               query += `${key}:count(${value.relationNode.predicate}) `;
+             } else {
+               query += `${key}:count(${key}) `;
+             }
+          }
+        })
+      }
+      query += '}}';
+    var title = `expand ${type}`;
+    this.runQuery(query).then((r)=>this.analyseQueryResponse(query,r["data"],true,title))
+  }
 }
 removeNode(ele) {
   console.log(`delete node ${ele.id()}`);

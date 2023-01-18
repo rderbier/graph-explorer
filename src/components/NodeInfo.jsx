@@ -5,25 +5,39 @@ import React from 'react';
 
 import Stack from 'react-bootstrap/Stack';
 
+
+/*
+  displays the information of a selected node
+  and display available actions
+  Usage :
+  <NodeInfo value={selectedNode} expand={(data)=>this.expandNode(data,'top 10')}/>
+
+  value is cytoscape object , so we use .data() to get data with keys and values
+  { name  : "company X"}
+  NodeInfo is displaying all keys that are not dgraph.something, id, uid, label
+  use the label value to find the property name to use for the Header
+  TO DO : make the list of action buttons a parameter of the component
+*/
 class NodeInfo extends React.Component {
   constructor(props) {
     super(props);
     this.state = {
+      data : props.value.data()
     };
   }
 
 
   render() {
-    if (this.props.value != undefined) {
+    if (this.state.data != undefined) {
     return (
       <>
       <Card>
       <Card.Body>
-        <Card.Title>{this.props.value.data()['name']}</Card.Title>
+        <Card.Title>{this.state.data[this.state.data["label"]]}</Card.Title>
         <Card.Text>
-        {Object.keys(this.props.value.data()).map((key)=> {
+        {Object.keys(this.state.data).map((key)=> {
           if ( ['id','source','target','round','uid','dgraph.type','label','name','parent'].indexOf(key) == -1) {
-             return (typeof this.props.value.data()[key] != 'object' && <><b>{key}</b> {this.props.value.data()[key]}<br/></> )
+             return (typeof this.state.data[key] != 'object' && <><b>{key}</b> {this.state.data[key]}<br/></> )
           }
         })}
 
