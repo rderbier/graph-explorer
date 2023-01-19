@@ -44,6 +44,7 @@ class GraphView extends React.Component {
     this.exploration = new Exploration();
     this.exploration.addStep('Business domain', "", this.schemaGraph, true)
     this.state = {
+      useCompound: true, // group nodes in compounds
       selectedNode: undefined,
       data: props.value,
       elements: this.exploration.getElements()
@@ -191,7 +192,10 @@ addEdge(elements,source,target,label, data) {
     console.log(`adding Edge ${label} from ${source} to ${target} (new : ${isTargetPresent})`);
 
     let elt = { group: 'edges' };
+
     elt.data = data || {};
+    elt.data.id = `${source}:${target}:${label}`;
+    elt.data.info = `${source}:${target}:${label}`;
     elt.data.source =source;
     elt.data.target =target;
     elt.data.label = label;
@@ -304,72 +308,6 @@ buildExpandQuery(type,uid,relation) {
     query += '}'
   }
 
-  switch (type) {
-    // case 'Company' :
-    // let companies = this.getUidsForType("Company");
-    // let companyInfo = '';
-    // let targetVar = '';
-    // if (companies.length > 0 ) {
-    //   targetVar = 'CompanyVar as ';
-    //   companyInfo = `Company (func:uid(CompanyVar)) { dgraph.type uid
-    //     invest @filter(uid_in(company,${companies.join()})) {
-    //     uid dgraph.type
-    //     name:uid
-    //     OS
-    //     POS
-    //     MKTVAL
-    //     company { dgraph.type uid }
-    //   } }`
-    // }
-    // query = `{
-    //   list(func:uid(${uid})) {
-    //     uid
-    //     dgraph.type
-    //     investors: count(investments)
-    //     investor:investments(orderdesc: OS, first:10) {
-    //       uid dgraph.type
-    //       name:uid
-    //       OS
-    //       POS
-    //       MKTVAL
-    //       ${targetVar} investor {
-    //         dgraph.type
-    //         uid
-    //         name
-    //         investments: count(invest)
-    //
-    //       }
-    //     }
-    //   }
-    //   ${companyInfo}
-    // }`
-    //
-    // break;
-    case 'Investor' :
-
-    query = `{
-      list(func:uid(${uid})) {
-        uid
-        dgraph.type
-        invest(first:10,orderdesc:OS)  {
-          uid dgraph.type
-          name:uid
-          OS MKTVAL POS
-          company {
-            dgraph.type uid
-            name
-            ticker:ticker
-            factsetid:factsetid
-            investors: count(investments)
-
-          }
-        }
-
-      }
-    }`
-
-    break;
-  }
   return query
 }
 
@@ -378,7 +316,7 @@ expandType(ele,option) {
   this.resetSelection();
   var entity = this.props.ontology.entities[type];
   if (entity!= undefined) {
-    var query = `{ list(func:type(${type}),first:25) { dgraph.type uid `;
+    var query = `{ list(func:type(${type}),first:25) { `;
 
       query += dgraph.infoSet(type)+'}}';
     var title = `expand ${type}`;
@@ -488,7 +426,9 @@ addGraph(elements,e,compound,level,parentUid,predicate) {
         if (point['name'] != undefined) {
           point['label'] = 'name';
         }
-        point['parent'] = "c"+compound+"-"+level;
+        if (this.state.useCompound === true) {
+           point['parent'] = "c"+compound+"-"+level;
+        }
         elements.push({
           group:"nodes",
           data:point,
@@ -535,7 +475,7 @@ analyseQueryResponse( query, data , reset = true, title) {
       //this.layout.run();
     }
     // add compound only if we found some nodes
-    if (Object.keys(this.newNodeCounter).length > 0) {
+    if ((Object.keys(this.newNodeCounter).length > 0) &&(this.state.useCompound === true)) {
       const compound = 'c'+this.stepIndex+"-"+1;
       elements.push({
         group:"nodes",

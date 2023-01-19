@@ -15,7 +15,8 @@ Search  "TO DO" in the source code.
 
 - improve history by adding the remove others or remove node steps (using node position in the list to identofy the node)
 - add search on categories
-- compute the expand query automatically
+- don't add reverse edge
+- build expand for non relations
 ## Available Scripts
 
 In the project directory, you can run:

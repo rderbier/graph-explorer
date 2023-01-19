@@ -154,7 +154,7 @@ const layoutMap = {
     // Padding on fit
     padding: 10,
     // Whether to enable incremental mode
-    randomize: true,
+    randomize: false,
     // Node repulsion (non overlapping) multiplier
     nodeRepulsion: 4500,
     // Ideal (intra-graph) edge length

@@ -112,7 +112,7 @@ const buildOntology = () => {
             isArray:true,
             entity:"Company",
             relationNode:{predicate:"invest",entity:"Investment",out_predicate:"company"},
-            expand:{order:"orderasc",sort:"name",first:"10"}
+            expand:{order:"orderdesc",sort:"OS",first:"10"}
           },
           "type" : { entity:"InvestorType"}
         }

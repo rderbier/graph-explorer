@@ -23,7 +23,8 @@ function buildStyles(graphStyle) {
         'source-font-weight': 'normal',
         'source-text-rotation': 'autorotate',
         'width': '1px',
-        'line-color': 'black'
+        'line-color': 'black',
+        'curve-style': 'bezier'
 
       },
 
