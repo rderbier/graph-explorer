@@ -205,7 +205,7 @@ addEdge(elements,source,target,label, data) {
 }
 getUidsForType(type) {
   return this.state.elements
-  .filter((e)=> { return ((e.group == "nodes") && (e.data["dgraph.type"]==type))})
+  .filter((e)=> { return ((e.group === "nodes") && (e.data["dgraph.type"]===type))})
   .map((e) => e.data.id);
 
 }
@@ -239,53 +239,112 @@ runQuery = (query) =>   {
 buildExpandQuery(type,uid,relation) {
   /* expand a node uid
      use type and ontology.entities[type] to build the query
+     1- get entity type of the expand : e.relations[relation].entity
+     2- list of relations of this target type which have UIds in the layout
+
   */
   var query = `{ list(func:uid(${uid})) { dgraph.type uid expand(_all_) { dgraph.type expand(_all_) }}}`
-  var entity = this.props.ontology.entities[type];
-  if ((entity!= undefined) && (entity.relations[relation]!=undefined)) {
-    const rel = entity.relations[relation];
-    query = `{ list(func:uid(${uid})) { uid dgraph.type ${relation} (${rel.expand.order}:${rel.expand.sort}, first:${rel.expand.first}) {
-          uid dgraph.type
-    }
-  }`
-}
-  switch (type) {
-    case 'Company' :
-    let companies = this.getUidsForType("Company");
-    let companyInfo = '';
-    if (companies.length > 0 ) {
-      companyInfo = `invest @filter(uid_in(company,${companies.join()})) {
-        uid dgraph.type
-        name:uid
-        OS
-        POS
-        MKTVAL
-        company { dgraph.type uid }
-      }`
-    }
-    query = `{
-      list(func:uid(${uid})) {
-        uid
-        dgraph.type
-        investors: count(investments)
-        investor:investments(orderdesc: OS, first:10) {
-          uid dgraph.type
-          name:uid
-          OS
-          POS
-          MKTVAL
-          investor {
-            dgraph.type
-            uid
-            name
-            investments: count(invest)
-            ${companyInfo}
-          }
+  const typeInfo = this.props.ontology.entities[type];
+  if ((typeInfo!= undefined) && (typeInfo.relations[relation]!=undefined)) {
+    const rel = typeInfo.relations[relation];
+
+    // The current type has the relation we want to expand on
+    const expandType = typeInfo.relations[relation].entity;
+    const expandTypeInfo = this.props.ontology.entities[expandType];
+    //build the map of all uids we will need to find edges with existing nodes in the layout
+    let uidMap = {};
+    Object.entries(expandTypeInfo.relations).forEach(([key,value]) => {
+      if (uidMap[value.entity] == undefined) {
+         var list = this.getUidsForType(value.entity);
+         if (list.length > 0) {
+            uidMap[value.entity] = list;
         }
       }
-    }`
+    })
+    let varName = (Object.keys(uidMap).length > 0) ? "nodes as " : "";
 
-    break;
+    query = `{ list(func:uid(${uid})) { uid dgraph.type `;
+    let limit = `(first:10)`;
+    if (rel.expand != undefined) {
+      limit = `(${rel.expand.order}:${rel.expand.sort}, first:${rel.expand.first})`;
+    }
+    let infoSet = dgraph.infoSet(expandType);
+    if (rel.relationNode != undefined) {
+      let relInfoSet = dgraph.infoSetLimited(rel.relationNode.entity);
+
+      query += `${rel.relationNode.predicate} ${limit} { \
+        ${relInfoSet} \
+        ${varName} ${rel.relationNode.out_predicate} { \
+          ${infoSet} \
+        } } } `;
+    } else {
+      query += `${varName}  ${relation} ${limit} {
+        ${infoSet}
+       } } `;
+    }
+    // add a section for each entry in the uidMap
+    Object.entries(expandTypeInfo.relations).forEach(([key,value]) => {
+      if (uidMap[value.entity] != undefined) {
+        if (value.relationNode != undefined) {
+          let relInfoSet = dgraph.infoSetLimited(rel.relationNode.entity);
+          query += ` \
+            ${key}(func:uid(nodes)) { \
+            dgraph.type uid \
+            ${value.relationNode.predicate} @filter(uid_in(${value.relationNode.out_predicate},[${uidMap[value.entity].join()}])) { \
+              ${relInfoSet} \
+              ${value.relationNode.out_predicate} { \
+                dgraph.type uid \
+              } }}`
+        } else {
+          // todo
+        }
+      }
+    })
+
+    query += '}'
+  }
+
+  switch (type) {
+    // case 'Company' :
+    // let companies = this.getUidsForType("Company");
+    // let companyInfo = '';
+    // let targetVar = '';
+    // if (companies.length > 0 ) {
+    //   targetVar = 'CompanyVar as ';
+    //   companyInfo = `Company (func:uid(CompanyVar)) { dgraph.type uid
+    //     invest @filter(uid_in(company,${companies.join()})) {
+    //     uid dgraph.type
+    //     name:uid
+    //     OS
+    //     POS
+    //     MKTVAL
+    //     company { dgraph.type uid }
+    //   } }`
+    // }
+    // query = `{
+    //   list(func:uid(${uid})) {
+    //     uid
+    //     dgraph.type
+    //     investors: count(investments)
+    //     investor:investments(orderdesc: OS, first:10) {
+    //       uid dgraph.type
+    //       name:uid
+    //       OS
+    //       POS
+    //       MKTVAL
+    //       ${targetVar} investor {
+    //         dgraph.type
+    //         uid
+    //         name
+    //         investments: count(invest)
+    //
+    //       }
+    //     }
+    //   }
+    //   ${companyInfo}
+    // }`
+    //
+    // break;
     case 'Investor' :
 
     query = `{
@@ -313,26 +372,7 @@ buildExpandQuery(type,uid,relation) {
   }
   return query
 }
-infoSet(entity) {
-  var infoSet = "dgraph.type uid ";
-  if (entity.properties) {
-    Object.keys(entity.properties).forEach((key) => {
-      infoSet += ` ${key} `;
-    })
-  }
-  if (entity.relations) {
-    Object.entries(entity.relations).forEach(([key,value]) => {
-      if (value.isArray == true) {
-         if (value.relationNode != undefined) {  // count the predicate to the relationNode
-           infoSet += `${key}:count(${value.relationNode.predicate}) `;
-         } else {
-           infoSet += `${key}:count(${key}) `;
-         }
-      }
-    })
-  }
-  return infoSet;
-}
+
 expandType(ele,option) {
   const type = ele.id();
   this.resetSelection();
@@ -340,7 +380,7 @@ expandType(ele,option) {
   if (entity!= undefined) {
     var query = `{ list(func:type(${type}),first:25) { dgraph.type uid `;
 
-      query += this.infoSet(entity)+'}}';
+      query += dgraph.infoSet(type)+'}}';
     var title = `expand ${type}`;
     this.runQuery(query).then((r)=>this.analyseQueryResponse(query,r["data"],true,title))
   }
@@ -376,11 +416,11 @@ setVisitedNode(ele) {
   ele.addClass("visited");
 
 }
-expandNode(ele) {
+expandNode(ele, relation) {
   this.resetSelection();
   const uid = ele.id();
   const type = ele.data()['dgraph.type'];
-  var query = this.buildExpandQuery(type,uid);
+  var query = this.buildExpandQuery(type,uid,relation);
   this.setVisitedNode(ele);
   const title = `Expand ${type} ${ele.data()['name']}`
   this.runQuery(query).then((r)=>this.analyseQueryResponse(query,r["data"],false,title))
@@ -396,6 +436,11 @@ undo() {
 
 }
 addGraph(elements,e,compound,level,parentUid,predicate) {
+  // elements is the current cytoscape graph
+  // e is one node with potentially nested info to add
+  // coumpound is a grouping info : we use the sequence of the query in the plan
+  // level : nested level of analysing the node : we start at 1 and if the node as nested info we recurse addGraph at level+1
+  // parentUid and predicate is used for nested (recursive) analysis : uid of the parent node and predicate leading to this child node.
   this.maxLevel=level;
 
   var targetUid;
@@ -407,17 +452,25 @@ addGraph(elements,e,compound,level,parentUid,predicate) {
     for(var key in e) {
       if (key!='dgraph.type') {
         if(typeof e[key] == 'object') {
+
           if (Array.isArray(e[key])) {
+            // Array could be a scalar array or node array
+            // !!! we are assuming only node arrays  -> TO PROTECT  !!!
+            // every array item is a node to add to the layout
             for (var child of e[key]) {
               targetUid = this.addGraph(elements,child,compound,level+1,uid,key);
               this.addEdge(elements,uid, targetUid, key)
             }
           } else {
+            // nested block : key is a predicate to a node
 
             if (!this.isRelation(e)) {
+              // if the node we are in is a normal node we can just add the nested object and create an edge
               targetUid = this.addGraph(elements,e[key],compound,level+1,uid,key);
               this.addEdge(elements,uid, targetUid, key)
             } else {
+              // the node we are in is a 'fake' node used to hold relation information
+              // continue to add the target node of the relation
               targetUid = this.addGraph(elements,e[key],compound,level,uid,key);
             }
           }
@@ -448,7 +501,10 @@ addGraph(elements,e,compound,level,parentUid,predicate) {
         }
         console.log(`adding node ${uid}`);
       } else {
+        // if the current node is a relation,
+        // we know the target and can add edge from parent (the from) to the target node, with the data of this relation node
         this.addEdge(elements,parentUid, targetUid, predicate, point);
+        // we clear the returned info so the parent in the recusive calls will no create an edge to this node
         uid = undefined;
       }
     } else {
@@ -465,15 +521,13 @@ analyseQueryResponse( query, data , reset = true, title) {
 
   this.newNodeCounter = {}
   if (data) {
-    console.log("Result");
-    console.log(JSON.stringify(data,null,2));
+    console.log("analyseQueryResponse");
+    //console.log(JSON.stringify(data,null,2));
 
-    var firstKey, firstProp;
-    for(var key in data) {
+    for(var key in data) { // each data block
       if(data.hasOwnProperty(key)) {
-        firstKey = key;
 
-        for (var e of data[key]) {
+        for (var e of data[key]) { // each entry in the block array
           this.addGraph(elements,e,this.stepIndex,1);
 
         }
@@ -525,7 +579,7 @@ buildSearchQuery(criteria) {
     var c = criteria.criteria[Object.keys(criteria.criteria)[0]]; // just using first criteria at the moment
     query = `{
       all(func:${c.operator}(${property},"${c.value}")) @filter(type(${criteria.type})) { `;
-    query += this.infoSet(this.props.ontology.entities[criteria.type]);
+    query += dgraph.infoSet(criteria.type);
     query+=` } }`
   }
 

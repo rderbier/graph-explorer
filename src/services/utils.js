@@ -119,7 +119,7 @@ function buildSchemaGraph(ontology) {
       Object.entries(ontology.entities[entity].relations).forEach(([key, relation]) => {
         var rel
         if (relation.relationNode != undefined) {
-           rel = { group:"edges", data: { source: `${entity}`, target: `${relation.relationNode.type}`, label: `${relation.relationNode.predicate}` } }
+           rel = { group:"edges", data: { source: `${entity}`, target: `${relation.relationNode.entity}`, label: `${relation.relationNode.predicate}` } }
         } else {
          rel = { group:"edges", data: { source: `${entity}`, target: `${relation.entity}`, label: `${key}` } }
         }

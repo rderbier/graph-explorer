@@ -84,8 +84,8 @@ const buildOntology = () => {
           "investors" : {
             isArray:true,
             entity:"Investor",
-            relationNode:{predicate:"investments",type:"Investment",out_predicate:"investor"},
-            expand:{order:"orderdesc",sort:"OS"}
+            relationNode:{predicate:"investments",entity:"Investment",out_predicate:"investor"},
+            expand:{order:"orderdesc",sort:"OS",first:"10"}
           },
           "industry" : { entity:"Industry"},
           "country" : { entity:"Country"}
@@ -93,8 +93,13 @@ const buildOntology = () => {
       },
       "Investment" : {
         type:"relation",
+        properties : {
+          "OS" : { type:"float", searchable: false},
+          "POS" :{ type:"int", searchable: false},
+          "MKTVAL" :{ type:"float", searchable: false}
+        },
         relations : {
-          "in" : { isArray:false, entity:"Company"}
+          "company" : { isArray:false, entity:"Company"}
         }
       },
       "Investor" : {
@@ -103,11 +108,11 @@ const buildOntology = () => {
            "name" : { type:"text", searchable: true, operators:["anyoftext"]}
         },
         relations : {
-          "companies" : {
+          "investments" : {
             isArray:true,
             entity:"Company",
-            relationNode:{predicate:"invest",type:"Investment",out_predicate:"company"},
-            expand:{order:"orderdesc",sort:"OS"}
+            relationNode:{predicate:"invest",entity:"Investment",out_predicate:"company"},
+            expand:{order:"orderasc",sort:"name",first:"10"}
           },
           "type" : { entity:"InvestorType"}
         }
@@ -144,6 +149,39 @@ const buildOntology = () => {
     }
   }
 }
+
+const infoSet = (type) => {
+  const entity = ontology.entities[type];
+  var infoSet = "dgraph.type uid ";
+  if (entity.properties) {
+    Object.keys(entity.properties).forEach((key) => {
+      infoSet += ` ${key} `;
+    })
+  }
+  if (entity.relations) {
+    Object.entries(entity.relations).forEach(([key,value]) => {
+      if (value.isArray == true) {
+         if (value.relationNode != undefined) {  // count the predicate to the relationNode
+           infoSet += `${key}:count(${value.relationNode.predicate}) `;
+         } else {
+           infoSet += `${key}:count(${key}) `;
+         }
+      }
+    })
+  }
+  return infoSet;
+}
+const infoSetLimited = (type) => {
+  const entity = ontology.entities[type];
+  var infoSet = "dgraph.type uid ";
+  if (entity.properties) {
+    Object.keys(entity.properties).forEach((key) => {
+      infoSet += ` ${key} `;
+    })
+  }
+
+  return infoSet;
+}
 const isConnected = (k) =>{
   key = k;
   return runQuery("schema {}")
@@ -164,4 +202,4 @@ const isConnected = (k) =>{
 
 
 
-export default {runQuery,isConnected, getCategories, getOntology}
+export default {runQuery,isConnected, getCategories, getOntology, infoSet,infoSetLimited}
