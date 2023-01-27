@@ -16,7 +16,7 @@ class NodeTypeConfigurator extends React.Component {
     };
   }
   generateForm() {
-   if (this.props.type != undefined) {
+   if ((this.state.schema != undefined) && (this.state.schema.features != undefined)){
     return (
     <Form>
       <Form.Group  controlId="id1">
@@ -24,11 +24,6 @@ class NodeTypeConfigurator extends React.Component {
            return (
              <>
              <Form.Label>{key}</Form.Label>
-             <Form.Control
-                 required
-                 type='text'
-                 placeholder="search string"
-                />
            </>
          )
 
@@ -36,7 +31,9 @@ class NodeTypeConfigurator extends React.Component {
 
 
       </Form.Group>
+      {/*
       <Button className="mt-2" type="submit" variant="secondary" size="sm" onClick={() => this.props.query(this.state)}>Search</Button>
+      */}
     </Form>
     )
   } else {
