@@ -6,6 +6,7 @@ import Explorer from '../Explorer';
 import AppHeader from '../AppHeader';
 import Credentials from '../Credentials';
 import dgraph from '../../services/dgraph.js';
+import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
 //
 // searchable properties must have at least one operator -> maybe set it to eq by default
 // property can be a property of a linked nodes if the path is through 1-1 -> to be checked

@@ -89,6 +89,15 @@ const buildOntology = () => {
           },
           "industry" : { entity:"Industry"},
           "country" : { entity:"Country"}
+        },
+        features : {
+          "similar companies" : {
+            "algo" :"jaccard-simple",
+            "params" : {
+              "relation" : "investors",
+              "min common" : 1
+            }
+          }
         }
       },
       "Investment" : {
@@ -171,6 +180,10 @@ const infoSet = (type) => {
   }
   return infoSet;
 }
+const getTypeSchema = (type) => {
+  return ontology.entities[type];
+}
+
 const infoSetLimited = (type) => {
   const entity = ontology.entities[type];
   var infoSet = "dgraph.type uid ";
@@ -181,6 +194,50 @@ const infoSetLimited = (type) => {
   }
 
   return infoSet;
+}
+const buildJaccardQuery = (type, uid, params)=> {
+
+  var query = `{
+    var(func: uid(${uid})) {    # M1
+      investments {
+       M1target as investor {
+         invest {
+          company {
+            M2 as count(investments)
+          }
+        }
+       }
+      }
+    }
+
+
+  # Calculate a Jaccard distance score for every movie that shares
+  # at least 1 genre with the given movie.
+  var(func: uid(${uid})) {    # M1
+    norm as math(1.0)               # 1
+    M1_num as count(investments) # 2
+    investments {
+      investor {
+        invest {
+          company {
+            M1 as math(M1_num / norm)
+            num as count(investments @filter(uid_in(investor,uid(M1target))))
+            distance as math( 1 - ( num / (M1 + M2 - num) )) # 6
+            }
+        }
+      }
+    }
+  }
+
+  d(func:uid(distance),orderasc:val(distance),first:10) {
+     uid name
+     jaccard:val(distance)
+     common:val(num)
+     M1:val(M1)
+     M2:val(M2)
+  }
+  }`
+  return query
 }
 const isConnected = (k) =>{
   key = k;
@@ -202,4 +259,4 @@ const isConnected = (k) =>{
 
 
 
-export default {runQuery,isConnected, getCategories, getOntology, infoSet,infoSetLimited}
+export default {runQuery,isConnected, getCategories, getOntology, getTypeSchema, infoSet,infoSetLimited, buildJaccardQuery}

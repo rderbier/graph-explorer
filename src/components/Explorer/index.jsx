@@ -9,7 +9,7 @@ import Tabs from 'react-bootstrap/Tabs';
 import QuerySteps from '../QuerySteps.jsx';
 import NodeInfo from '../NodeInfo.jsx';
 import NodeListInfo from '../NodeListInfo.jsx';
-import NodeSelector from '../NodeSelector.jsx';
+import NodeTypePanel from '../NodeTypePanel.jsx';
 import Selector from '../Selector.jsx';
 import Cytoscape from 'cytoscape';
 import cxtmenu from 'cytoscape-cxtmenu';
@@ -104,6 +104,9 @@ class GraphView extends React.Component {
       }
 
     ]
+    /*
+    * add expansion along relationships
+    */
     if (entitySchema.relations!= undefined) {
       Object.entries(entitySchema.relations).forEach(([key, value]) => {
         if (value.isArray == true) {
@@ -116,6 +119,16 @@ class GraphView extends React.Component {
         }
       }
     )
+  }
+  if (entitySchema.features!= undefined) {
+    Object.entries(entitySchema.features).forEach(([key, value]) => {
+        topMenu.push({
+          name: `${key}`, // html/text content to be displayed in the menu
+          select: (ele) => { // a function to execute when the command is selected
+            this.expandNodeByFeature( ele, value) // `ele` holds the reference to the active element
+          }
+        })
+    })
   }
   return topMenu
 }
@@ -353,6 +366,7 @@ setVisitedNode(ele) {
   // add class to the visited node
   ele.addClass("visited");
 
+
 }
 expandNode(ele, relation) {
   this.resetSelection();
@@ -364,6 +378,13 @@ expandNode(ele, relation) {
   this.runQuery(query).then((r)=>this.analyseQueryResponse(query,r["data"],false,title))
   console.log(`round ${this.stepIndex}`);
 
+}
+expandNodeByFeature(ele, featureParams) {
+
+  console.log(`Apply feature to expand node ${featureParams.algo}`);
+  const nodeData = ele.data();
+  const query = dgraph.buildJaccardQuery(nodeData['dgraph.type'],nodeData.uid,featureParams);
+  this.runQuery(query).then((r)=>this.analyseProximityResponse(query,r["data"],false,title))
 }
 isRelation(e) {
   return (e['dgraph.type'][0] == "Investment")
@@ -455,6 +476,8 @@ addGraph(elements,e,compound,level,parentUid,predicate) {
     }
   } else { console.log(`node without id or uid`)}
   return uid;
+}
+analyseProximityResponse( query, data , reset = true, title) {
 }
 analyseQueryResponse( query, data , reset = true, title) {
   var elements = [];
@@ -552,7 +575,9 @@ infoSection() {
   if (this.state.selectedNode != undefined) {
     return <NodeInfo value={this.state.selectedNode} expand={(data)=>this.expandNode(data,'top 10')}/>
   } else if (this.state.selectedType != undefined) {
-    return <NodeSelector type={this.state.selectedType} schema={this.props.ontology.entities[this.state.selectedType]}query={(data)=>this.searchNode(data)}/>
+    return   <NodeTypePanel type={this.state.selectedType} schema={this.props.ontology.entities[this.state.selectedType]}query={(data)=>this.searchNode(data)}/>
+
+
   } else if (this.state.selectedList != undefined) {
     return <NodeListInfo elements={this.state.selectedList}/>
   }
