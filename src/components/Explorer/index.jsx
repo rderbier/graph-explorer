@@ -383,7 +383,9 @@ expandNodeByFeature(ele, featureParams) {
 
   console.log(`Apply feature to expand node ${featureParams.algo}`);
   const nodeData = ele.data();
-  const query = dgraph.buildJaccardQuery(nodeData['dgraph.type'],nodeData.uid,featureParams);
+  const type = nodeData['dgraph.type'];
+  const title = `Proximity ${type} ${ele.data()['name']}`
+  const query = dgraph.buildJaccardQuery(type,nodeData.uid,featureParams);
   this.runQuery(query).then((r)=>this.analyseProximityResponse(query,r["data"],false,title))
 }
 isRelation(e) {
