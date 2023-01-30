@@ -43,6 +43,7 @@ class NodeInfo extends React.Component {
 
         </Card.Text>
         <Button variant="secondary" size="sm" onClick={() => this.props.expand(this.props.value)}>Expand</Button>
+        {(this.state.data !== undefined) && (this.state.data.inferedEdges !== undefined) && <Button variant="secondary" size="sm" onClick={() => this.props.reveal(this.props.value)}>Show relations</Button> }
       </Card.Body>
       </Card>
 

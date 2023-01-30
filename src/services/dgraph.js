@@ -1,32 +1,9 @@
+import {ontology} from './ontology.js';
 
 const dgraphEndpoint = "/query?timeout=20s&debug=true"
 var key
 var schema
-var ontology
-/* schema format
-  {
-   "schema": [
-      {
-        "predicate": "FSYMID",
-        "type": "string",
-        "index": true,
-        "tokenizer": [
-          "hash"
-        ]
-      },...],
-   "types": [
-    {
-      "name": "Company",
-      "fields": [
-        {
-          "name": "factsetid"
-        },
-        ...
-      ],
 
-    }]
-  }
-*/
 const runQuery = (query) =>   {
 
   console.log(`Run query ${query}`);
@@ -158,8 +135,15 @@ const buildOntology = () => {
     }
   }
 }
-
-const infoSet = (type) => {
+function reverseEdge(type,relation) {
+  const entity = ontology.entities[type];
+  var reverse
+  if ((entity!== undefined) && (entity.relations!== undefined) && (entity.relations[relation] !== undefined)) {
+     reverse = entity.relations[relation].reverse
+  }
+  return reverse
+}
+function infoSet(type) {
   const entity = ontology.entities[type];
   var infoSet = "dgraph.type uid ";
   if (entity.properties) {
@@ -245,7 +229,7 @@ const isConnected = (k) =>{
   .then((r)=>{
     console.log(`response ${r}`);
     schema = r.data;
-    buildOntology();
+    //buildOntology();
     if (r.errors != undefined) {
       throw(r.errors[0].message)
     } else {
@@ -259,4 +243,4 @@ const isConnected = (k) =>{
 
 
 
-export default {runQuery,isConnected, getCategories, getOntology, getTypeSchema, infoSet,infoSetLimited, buildJaccardQuery}
+export default {reverseEdge, runQuery,isConnected, getCategories, getOntology, getTypeSchema, infoSet,infoSetLimited, buildJaccardQuery}

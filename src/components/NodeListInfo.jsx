@@ -24,7 +24,7 @@ class NodeListInfo extends React.Component {
         <Accordion.Header>{data.name}</Accordion.Header>
         <Accordion.Body>
         {Object.keys(ele.data()).map((key)=> {
-          if ( ['id','uid','dgraph.type','label','name','parent'].indexOf(key) == -1) {
+          if ( ['id','uid','dgraph.type','label','name','parent','inferedEdges'].indexOf(key) == -1) {
              return (<><b>{key}</b> {ele.data()[key]}<br/></> )
           }
         })}
@@ -35,7 +35,19 @@ class NodeListInfo extends React.Component {
     }
     return array;
   }
-
+  revealEdgesAction() {
+    let hasEdges = false;
+    for (var ele of this.props.elements) {
+      const data = ele.data();
+      if (data.inferedEdges !== undefined) {
+         hasEdges = true;
+         break;
+      }
+    }
+    if (hasEdges === true) {
+       return <Button variant="secondary" size="sm" onClick={() => this.props.reveal(this.props.elements)}>Show relations</Button>
+    }
+  }
   render() {
     if (this.props.elements != undefined) {
     return (
@@ -43,6 +55,7 @@ class NodeListInfo extends React.Component {
       <Accordion defaultActiveKey="0" flush>
       {this.itemList()}
     </Accordion>
+     {this.revealEdgesAction()}
      <CSVLink data={this.props.elements.map((e)=>e.data())}>Download</CSVLink>
       </>
     );
