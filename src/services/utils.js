@@ -34,7 +34,7 @@ function buildStyles(graphStyle) {
     {
       selector: 'node',
       style: {
-        label: 'data(name)',
+        label: 'data(label)',
         borderOpacity: '50',
         textValign:'center',
         textHalign:'center',
@@ -111,7 +111,7 @@ function buildSchemaGraph(ontology) {
   // and CSS class type<entityType> and a class for the type of entity (entity or relation) - (when an entity is used as a relation)
   //
   for (var entity in ontology.entities) {
-    var elt = { group:"nodes", data:{ id:`${entity}`, name:`${entity}`, "dgraph.type":"type"}, classes: [`type${entity}`] };
+    var elt = { group:"nodes", data:{ id:`${entity}`, label: `${entity}`, name:`${entity}`, "dgraph.type":"type"}, classes: [`type${entity}`] };
     if ( ontology.entities[entity].type != undefined ) {
       elt.classes.push(`${ontology.entities[entity].type}`)
     }

@@ -480,10 +480,11 @@ buildExpandQuery(type,uid,relation) {
                 point['id'] = uid;
                 point['dgraph.type'] = type
                 if (!this.isRelation(e)) {
-                  var classes = e["dgraph.type"] || ["default"];
-                  if (point['name'] !== undefined) {
-                    point['label'] = 'name';
-                  }
+                  var classes = type || ["default"];
+
+
+                    point['label'] = point[dgraph.getTypeSchema(type).label] || point['id'];
+                  
                   if (this.state.useCompound === true) {
                     point['parent'] = "c"+compound+"-"+level;
                     point['parent'] = "c"+compound+"-1";
