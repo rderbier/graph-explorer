@@ -67,7 +67,7 @@ const style = {
       }
   start(state) {
      if (state == true) {
-       this.setState({connected:state, ontology:dgraph.getOntology()})
+       this.setState({connected:state, style:dgraph.getStyle(), ontology:dgraph.getOntology()})
      } else {
        this.setState({connected:state})
      }
@@ -91,7 +91,7 @@ const style = {
         <Container fluid >
         <AppHeader connexion="localhost:8080"/>
         <Container fluid className="pt-5">
-        <Explorer style={style} ontology={this.state.ontology}/>
+        <Explorer style={this.state.style} ontology={this.state.ontology}/>
         </Container>
         </Container>
 

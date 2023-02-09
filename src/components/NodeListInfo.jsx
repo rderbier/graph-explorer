@@ -21,7 +21,7 @@ class NodeListInfo extends React.Component {
 
       array.push(
         <Accordion.Item eventKey={data.id}>
-        <Accordion.Header>{data.name}</Accordion.Header>
+        <Accordion.Header>{data.label}</Accordion.Header>
         <Accordion.Body>
         {Object.keys(ele.data()).map((key)=> {
           if ( ['id','uid','dgraph.type','label','name','parent','inferedEdges'].indexOf(key) == -1) {

@@ -24,7 +24,7 @@ class QuerySteps extends React.Component {
       if (el.group == "nodes") {
         const data = el.data;
         array.push(
-          <><b>{'name'}</b> {data["name"]}<br/></>
+          <><b>{'name'}</b> {data["label"]}<br/></>
 
         )
       }

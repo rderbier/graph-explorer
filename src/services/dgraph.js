@@ -43,6 +43,34 @@ const getCategories = (ontology) =>{
 const getOntology = ()=>{
    return ontology;
 }
+const getStyle = ()=> {
+  let style = {
+    colors: [
+      "rgb(165, 137, 175)",
+      "rgb(222, 164, 192)",
+      "rgb(236, 202, 170)",
+      "rgb(247, 237, 195)",
+      "rgb(173, 225, 212)",
+      "rgb(167, 187, 225)"],
+
+      entities: {
+      }
+    };
+
+    let i = 0
+    Object.entries(ontology.entities).forEach(
+      ([key, value]) => {
+        style.entities[key] = {
+          style: {
+            "background-color": i
+          }
+        }
+        i = (i + 1 ) % 6
+      }
+    );
+
+    return style
+}
 const buildOntology = () => {
   /* TO DO : build from schema */
   ontology = {
@@ -143,6 +171,7 @@ function reverseEdge(type,relation) {
   }
   return reverse
 }
+
 function infoSet(type) {
   const entity = ontology.entities[type];
   var infoSet = "dgraph.type uid ";
@@ -153,12 +182,21 @@ function infoSet(type) {
   }
   if (entity.relations) {
     Object.entries(entity.relations).forEach(([key,value]) => {
+      let alias = key
+      if (value.label !== undefined ) {
+        alias = `${value.label} : `
+      }
       if (value.isArray == true) {
          if (value.relationNode != undefined) {  // count the predicate to the relationNode
-           infoSet += `${key}:count(${value.relationNode.predicate}) `;
+           infoSet += `${alias}:count(${value.relationNode.predicate}) `;
          } else {
-           infoSet += `${key}:count(${key}) `;
+           infoSet += `${alias}:count(${key}) `;
          }
+      } else {
+         let relEntity = ontology.entities[value.entity];
+         let predicate = relEntity.label || Object.keys(relEntity.properties)[0] ;
+         // take the property identified as label or the first property
+         infoSet += `${alias}:${key} { label:${predicate} } `;
       }
     })
   }
@@ -179,6 +217,90 @@ const infoSetLimited = (type) => {
 
   return infoSet;
 }
+const buildExpandQuery = (type,uid,relation,uidMap) => {
+  /* expand a node uid
+  use type and ontology.entities[type] to build the query
+  1- get entity type of the expand : e.relations[relation].entity
+  2- list of relations of this target type which have UIds in the layout
+
+  */
+  var query = `{ list(func:uid(${uid})) { dgraph.type uid expand(_all_) { dgraph.type expand(_all_) }}}`
+  const typeInfo = ontology.entities[type];
+  if ((typeInfo!== undefined) && (typeInfo.relations[relation]!==undefined)) {
+    const rel = typeInfo.relations[relation];
+
+    // The current type has the relation we want to expand on
+    const expandType = typeInfo.relations[relation].entity;
+    const expandTypeInfo = ontology.entities[expandType];
+
+
+    let nodeSection = "";
+    Object.entries(expandTypeInfo.relations).forEach(([key,value]) => {
+
+      if (uidMap[value.entity] !== undefined) {
+        if (value.relationNode !== undefined) {
+          let relInfoSet = infoSetLimited(value.relationNode.entity);
+          nodeSection = ` \
+          ${key}(func:uid(nodes)) { \
+            dgraph.type uid \
+            ${key}:${value.relationNode.predicate} @filter(uid_in(${value.relationNode.out_predicate},[${uidMap[value.entity].join()}])) { \
+              ${relInfoSet} \
+              ${value.relationNode.out_predicate} { \
+                dgraph.type uid \
+              } }}`
+            } else {
+              nodeSection = ` \
+              ${value.label || key}(func:uid(nodes)) { \
+                dgraph.type uid
+                ${key} @filter(uid(${uidMap[value.entity].join()})) { dgraph.type uid }
+              }`
+            }
+          }
+        })
+        // add a section for each entry in the uidMap
+        let info = infoSet(expandType);
+        let varName = (nodeSection !== "") ? "nodes as " : "";
+        if ((rel.expand !== undefined) && (rel.expand.sort.startsWith("count")) ){
+          query = `{ var(func:uid(${uid})) {
+            ${relation} {
+              c as ${rel.expand.sort}
+            }
+          }
+          nodes as var(func:uid(c), ${rel.expand.order}:val(c), first:${rel.expand.first})
+          list (func:uid(${uid})) { uid dgraph.type
+             ${relation} @filter(uid(nodes)) {
+                ${info}
+            }
+          }`;
+
+        } else {
+          query = `{ list(func:uid(${uid})) { uid dgraph.type `;
+            let limit = `(first:10)`;
+            if (rel.expand !== undefined) {
+              limit = `(${rel.expand.order}:${rel.expand.sort}, first:${rel.expand.first})`;
+            }
+
+            if (rel.relationNode !== undefined) {
+              let relInfoSet = infoSetLimited(rel.relationNode.entity);
+
+              query += `${relation}:${rel.relationNode.predicate} ${limit} { \
+                ${relInfoSet} \
+                ${varName} ${rel.relationNode.out_predicate} { \
+                  ${info} \
+                } } } `;
+              } else {
+                query += `${varName}  ${relation} ${limit} {
+                  ${info}
+                } } `;
+              }
+            }
+
+            query += ` ${nodeSection} }`
+
+        }
+
+        return query
+      }
 const buildJaccardQuery = (type, uid, params)=> {
 
   var query = `{
@@ -243,4 +365,15 @@ const isConnected = (k) =>{
 
 
 
-export default {reverseEdge, runQuery,isConnected, getCategories, getOntology, getTypeSchema, infoSet,infoSetLimited, buildJaccardQuery}
+export default {
+  reverseEdge,
+  buildExpandQuery,
+  runQuery,
+  isConnected,
+  getCategories,
+  getStyle,
+  getOntology,
+  getTypeSchema,
+  infoSet,
+  infoSetLimited,
+  buildJaccardQuery}

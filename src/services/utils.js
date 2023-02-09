@@ -17,14 +17,23 @@ function buildStyles(graphStyle) {
     {
       selector: 'edge',
       style: {
+        'target-arrow-shape': 'triangle',
+        'curve-style': 'bezier'
+      }
+    },
+    {
+      selector: 'edge[label]',
+      style: {
         'source-label': 'data(label)',
         'target-arrow-shape': 'triangle',
-        'source-font-size': '12px',
+        'source-font-size': '6',
         'source-font-weight': 'normal',
         'source-text-rotation': 'autorotate',
         'width': '1px',
         'line-color': 'black',
-        'curve-style': 'bezier'
+        'curve-style': 'bezier',
+        'source-text-offset' : 50,
+        'min-zoomed-font-size' : 12
 
       },
 
@@ -32,7 +41,7 @@ function buildStyles(graphStyle) {
     },
 
     {
-      selector: 'node',
+      selector: 'node[label]',
       style: {
         label: 'data(label)',
         borderOpacity: '50',
@@ -120,9 +129,11 @@ function buildSchemaGraph(ontology) {
       Object.entries(ontology.entities[entity].relations).forEach(([key, relation]) => {
         var rel
         if (relation.relationNode != undefined) {
-           rel = { group:"edges", data: { source: `${entity}`, target: `${relation.relationNode.entity}`, label: `${relation.relationNode.predicate}` } }
+           rel = { group:"edges", data: { source: `${entity}`, target: `${relation.relationNode.entity}` } }
+           // omit label: `${relation.relationNode.predicate}`
         } else {
-         rel = { group:"edges", data: { source: `${entity}`, target: `${relation.entity}`, label: `${key}` } }
+         rel = { group:"edges", data: { source: `${entity}`, target: `${relation.entity}` } }
+         // omit , label: `${key}`
         }
         schemaGraph.push(rel)
       })
