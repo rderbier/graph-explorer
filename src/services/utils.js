@@ -62,14 +62,15 @@ function buildStyles(graphStyle) {
     {
       selector: 'node[donors]',
       style: {
-        label: 'data(label)',
-        borderOpacity: '50',
-        textValign:'center',
-        textHalign:'center',
-        textMaxWidth: '80px',
-        textWrap: 'wrap',
         width: function( ele ){  return sizePerField(ele,'donors') },
         height: function( ele ){  return sizePerField(ele,'donors') },
+      }
+    },
+    {
+      selector: 'node[projects]',
+      style: {
+        width: function( ele ){  return sizePerField(ele,'projects') },
+        height: function( ele ){  return sizePerField(ele,'projects') },
       }
     },
 

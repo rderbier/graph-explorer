@@ -55,6 +55,7 @@ class GraphView extends React.Component {
   initMenu(nodeType,commandList) {
     let defaults = {
       menuRadius: function(ele){ return 80; }, // the outer radius (node center to the end of the menu) in pixels. It is added to the rendered size of the node. Can either be a number or function as in the example.
+      cxtmenuadaptativeNodeSpotlightRadius: true,
       selector: "."+nodeType, // elements matching this Cytoscape.js selector will trigger cxtmenus
       commands: [], // function( ele ){ return [ /*...*/ ] }, // a function that returns commands or a promise of commands
       fillColor: 'rgba(0, 0, 0, 0.75)', // the background colour of the menu

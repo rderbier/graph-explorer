@@ -12,7 +12,7 @@ const ontology = {
             label : "projects",
             isArray:true,
             entity:"Project",
-            expand:{order:"orderdesc",sort:"count(~donation_project)",first:"10"},
+            expand:{order:"orderdesc",sort:"count(Project.donations)",first:"10"},
             reverse:"Project.school"
           },
           "School.city" : {
@@ -26,7 +26,7 @@ const ontology = {
         type:"entity",
         label: "City.name",
         properties : {
-           "City.name" : { type:"text", searchable: true, operators:["allofterms"]}
+           "City.name" : { type:"text", searchable: false}
         },
         relations : {
           "City.state" : {
@@ -40,7 +40,7 @@ const ontology = {
         type:"entity",
         label: "State.name",
         properties : {
-           "State.name" : { type:"text", searchable: true, operators:["allofterms"]}
+           "State.name" : { type:"text", searchable: false}
         }
       },
       "Project" : {
@@ -61,15 +61,14 @@ const ontology = {
           "Project.category" : {
             label : "category",
             isArray:false,
-            entity:"Category",
-            reverse:"~Project.category"
+            entity:"Category"
           },
           "donors" : {
             label : "donors",
             isArray:true,
             entity:"Donor",
-            relationNode:{predicate:"~donation_project",entity:"Donation",out_predicate:"donation_donor"},
-            expand:{order:"orderdesc",sort:"amount",first:"10"},
+            relationNode:{predicate:"Project.donations",entity:"Donation",out_predicate:"Donation.donor"},
+            expand:{order:"orderdesc",sort:"Donation.amount",first:"10"},
             reverse:"donations"
 
           }
@@ -86,8 +85,8 @@ const ontology = {
             label : "projects",
             isArray:true,
             entity:"Project",
-            relationNode:{predicate:"~donation_donor",entity:"Donation",out_predicate:"donation_project"},
-            expand:{order:"orderdesc",sort:"amount",first:"10"},
+            relationNode:{predicate:"Donor.donations",entity:"Donation",out_predicate:"Donation.project"},
+            expand:{order:"orderdesc",sort:"Donation.amount",first:"10"},
             reverse:"donations"
           }
         }
@@ -96,18 +95,20 @@ const ontology = {
         type:"relation",
         label: "amount",
         properties : {
-           "amount" : { type:"float", searchable: true},
+           "Donation.amount" : { type:"float", searchable: true},
         },
         relations : {
-          "donation_project" : {
+          "Donation.project" : {
             label : "project",
             isArray:false,
-            entity:"Project"
+            entity:"Project",
+            reverse:"Project.donations"
           },
-          "donation_donor" : {
+          "Donation.donor" : {
             label : "donor",
             isArray:false,
-            entity:"Donor"
+            entity:"Donor",
+            reverse:"Donor.donations"
           }
         }
       },
@@ -115,14 +116,7 @@ const ontology = {
         type:"entity",
         label: "Category.name",
         properties : {
-           "Category.name" : { type:"text", searchable: true, operators:["eq"]},
-        },
-        relations : {
-          "~Project.category" : {
-            label : "projects",
-            isArray:true,
-            entity:"Project"
-          }
+           "Category.name" : { type:"text", searchable: false},
         }
       }
 
