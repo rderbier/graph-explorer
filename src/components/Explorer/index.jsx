@@ -629,6 +629,7 @@ runQuery = (query) =>   {
           <Col>
           <Offcanvas
           placement='end'
+          backdrop={false}
           show={(this.state.selectedNode !== undefined)||(this.state.selectedType !== undefined)||(this.state.selectedList !== undefined)}
           onHide={()=>this.resetSelection()}>
           <Offcanvas.Header closeButton>
