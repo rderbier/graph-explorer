@@ -1,4 +1,4 @@
-import {ontology} from './ontology.js';
+import {ontology} from '../ontology/donors.js';
 
 const dgraphEndpoint = "/query?timeout=20s&debug=true"
 var key
