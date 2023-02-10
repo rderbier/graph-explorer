@@ -49,11 +49,25 @@ function buildStyles(graphStyle) {
         textHalign:'center',
         textMaxWidth: '80px',
         textWrap: 'wrap',
-        width: '100px',
-        height: '100px'
+        width: 100,
+        height: 100,
       }
 
     },
+    {
+      selector: 'node[donors]',
+      style: {
+        label: 'data(label)',
+        borderOpacity: '50',
+        textValign:'center',
+        textHalign:'center',
+        textMaxWidth: '80px',
+        textWrap: 'wrap',
+        width: function( ele ){  return 80 + 10*ele.data().donors },
+        height: function( ele ){  return 80 + 10*ele.data().donors },
+      }
+    },
+
     {
       selector: '.visited',
       style: {
