@@ -2,7 +2,12 @@
 * style
 * reference https://js.cytoscape.org/#style
 */
-
+function sizePerField(ele,field) {
+  var max = ele.parent().children().reduce((total, e) => {
+  return Math.max(total,e.data()[field] ||  0) ;
+}, 0);
+   return 80 + 80*ele.data()[field]/max
+}
 function buildStyles(graphStyle) {
   // graphStyle has colors and colorMap
 
@@ -63,8 +68,8 @@ function buildStyles(graphStyle) {
         textHalign:'center',
         textMaxWidth: '80px',
         textWrap: 'wrap',
-        width: function( ele ){  return 80 + 10*ele.data().donors },
-        height: function( ele ){  return 80 + 10*ele.data().donors },
+        width: function( ele ){  return sizePerField(ele,'donors') },
+        height: function( ele ){  return sizePerField(ele,'donors') },
       }
     },
 
