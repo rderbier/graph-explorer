@@ -11,53 +11,6 @@ import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
 // searchable properties must have at least one operator -> maybe set it to eq by default
 // property can be a property of a linked nodes if the path is through 1-1 -> to be checked
 
-const style = {
-  colors: [
-    "rgb(165, 137, 175)",
-    "rgb(222, 164, 192)",
-    "rgb(236, 202, 170)",
-    "rgb(247, 237, 195)",
-    "rgb(173, 225, 212)",
-    "rgb(167, 187, 225)"],
-
-    entities: {
-      "Sector" : {
-        style: {
-          "background-color": 0
-        }
-      },
-      "Industry" : {
-        style: {
-          "background-color": 2
-        }
-      },
-      "Company" : {
-        style: {
-          "background-color": 1
-        }
-      },
-      "Investment" :{
-        style: {
-          "background-color":   5
-        }
-      },
-      "Investor" : {
-        style: {
-          "background-color": 4
-        }
-      },
-      "Country" : {
-        style: {
-          "background-color": 5
-        }
-      },
-      "InvestorType" : {
-        style: {
-          "background-color": 4
-        }
-      },
-    }
-  }
 
   class App extends React.Component {
 
