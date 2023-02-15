@@ -22,28 +22,29 @@ class NodeInfo extends React.Component {
   constructor(props) {
     super(props);
     this.state = {
-      data : props.value.data()
+      data : this.props.value.data()
     };
   }
 
 
   render() {
-    if (this.state.data != undefined) {
+    const data = this.props.value.data();
+    if (data != undefined) {
     return (
       <>
       <Card>
       <Card.Body>
-        <Card.Title>{this.state.data[this.state.data["label"]]}</Card.Title>
+        <Card.Title>{data[data["label"]]}</Card.Title>
         <Card.Text>
-        {Object.keys(this.state.data).map((key)=> {
+        {Object.keys(data).map((key)=> {
           if ( ['id','source','target','round','uid','dgraph.type','label','name','parent'].indexOf(key) == -1) {
-             return (typeof this.state.data[key] != 'object' && <><b>{key}</b> {this.state.data[key]}<br/></> )
+             return (typeof data[key] != 'object' && <><b>{key}</b> {data[key]}<br/></> )
           }
         })}
 
         </Card.Text>
         <Button variant="secondary" size="sm" onClick={() => this.props.expand(this.props.value)}>Expand</Button>
-        {(this.state.data !== undefined) && (this.state.data.inferedEdges !== undefined) && <Button variant="secondary" size="sm" onClick={() => this.props.reveal(this.props.value)}>Show relations</Button> }
+        {(data !== undefined) && (data.inferedEdges !== undefined) && <Button variant="secondary" size="sm" onClick={() => this.props.reveal(this.props.value)}>Show relations</Button> }
       </Card.Body>
       </Card>
 

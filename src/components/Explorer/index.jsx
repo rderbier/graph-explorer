@@ -176,6 +176,8 @@ init(cy: CSCore) {
     });
     cy.on('click', 'node', (evt)=>{
       console.log( evt.type );
+
+
       if (evt.target.isParent()) {
         // a type is selected on the graph representing the schema
         this.setState({"selectedList":evt.target.children(), "selectedType":undefined,"selectedNode":undefined});
@@ -185,6 +187,7 @@ init(cy: CSCore) {
       } else { // a graph node is selected
         this.setState({"selectedNode":evt.target, "selectedType":undefined, "selectedList":undefined});
       }
+
       //this.cyRef.layout(this.layoutOptions).run();
     });
 
@@ -388,6 +391,7 @@ runQuery = (query) =>   {
           var target;
           let uid =  e['id'] || e['uid'] ;
           const type = e['dgraph.type'][0];
+          const typeInfo = dgraph.getTypeSchema(type);
           const source = { uid:uid, type:type}
           console.log(`Entering ${type} ${uid}`);
           if (uid !== undefined) {
@@ -436,7 +440,7 @@ runQuery = (query) =>   {
                 var classes = type || ["default"];
 
 
-                point['label'] = point[dgraph.getTypeSchema(type).label] || point['id'];
+                point['label'] = point[typeInfo.label] || point['id'];
 
                 if (this.state.useCompound === true) {
                   point['parent'] = "c"+compound+"-"+level;
@@ -629,6 +633,7 @@ runQuery = (query) =>   {
           </Col>
           <Col>
           <Offcanvas
+          id="offcanvas-info"
           placement='end'
           backdrop={false}
           show={(this.state.selectedNode !== undefined)||(this.state.selectedType !== undefined)||(this.state.selectedList !== undefined)}

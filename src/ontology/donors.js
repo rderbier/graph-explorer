@@ -93,7 +93,7 @@ const ontology = {
       },
       "Donation" : {
         type:"relation",
-        label: "amount",
+        label: "Donation.amount",
         properties : {
            "Donation.amount" : { type:"float", searchable: true},
         },
