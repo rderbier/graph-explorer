@@ -12,6 +12,7 @@ import Stack from 'react-bootstrap/Stack';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
 import { faMagnifyingGlass, faGear } from '@fortawesome/free-solid-svg-icons'
 
+
 class NodeTypePanel extends React.Component {
   constructor(props) {
     super(props);
@@ -33,7 +34,7 @@ render() {
       >
 
       <Tab eventKey="search" title={<FontAwesomeIcon icon={faMagnifyingGlass} color="blue"/>}>
-      <NodeSelector type={this.props.type} schema={this.props.schema} query={this.props.query}/>
+      <NodeSelector type={this.props.type} schema={this.state.schema} query={this.props.query}/>
       </Tab>
       <Tab eventKey="config" title={<FontAwesomeIcon icon={faGear} color="blue"/>}>
       <NodeTypeConfigurator type={this.props.type} />

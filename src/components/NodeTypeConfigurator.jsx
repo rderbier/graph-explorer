@@ -11,34 +11,57 @@ class NodeTypeConfigurator extends React.Component {
   constructor(props) {
     super(props);
     this.state = {
-      type : this.props.type,
-      schema : dgraph.getTypeSchema(this.props.type)
+      schema : dgraph.getTypeSchema(props.type)
     };
   }
+
+  static getDerivedStateFromProps(props, state) {
+    const config = dgraph.getTypeBehavior(props.type)
+    const nstate = {
+      schema : dgraph.getTypeSchema(props.type),
+      config : dgraph.getTypeBehavior(props.type)
+    }
+    return nstate
+  }
+  handleExpandChange(event) {
+    let fieldName = event.target.name;
+    let fieldVal = event.target.value;
+    let config = this.state.config
+    config.expand[fieldName]=fieldVal;
+    var newconf = dgraph.setTypeBehavior(this.props.type,config);
+    this.setState({
+      config: newconf
+    });
+  }
   generateForm() {
-   if ((this.state.schema != undefined) && (this.state.schema.features != undefined)){
     return (
     <Form>
-      <Form.Group  controlId="id1">
-      {Object.keys(this.state.schema.features).map((key)=> {
-           return (
-             <>
-             <Form.Label>{key}</Form.Label>
-           </>
-         )
-
-      })}
-
-
+      <Form.Group  controlId="typeconfigurator">
+      <Form.Label>{"Expand"}</Form.Label>
+      <Form.Control
+          required
+          type='text'
+          name='first'
+          placeholder='search string'
+          defaultValue={this.state.config.expand.first}
+          onChange={this.handleExpandChange.bind(this)}/>
       </Form.Group>
       {/*
       <Button className="mt-2" type="submit" variant="secondary" size="sm" onClick={() => this.props.query(this.state)}>Search</Button>
       */}
     </Form>
     )
-  } else {
-    return ( <b>Type not configurable</b>)
-  }
+
+        /*  {Object.keys(this.state.schema.features).map((key)=> {
+               return (
+                 <>
+                 <Form.Label>{key}</Form.Label>
+               </>
+             )
+
+          })}
+          */
+
 
 
   }

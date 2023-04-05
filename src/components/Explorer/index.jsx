@@ -51,6 +51,7 @@ class GraphView extends React.Component {
     }
     this.stepIndex = 0;
     this.setLayout("dagre");
+    this.setSchemaLayout("dagre");
   }
   initMenu(nodeType,commandList) {
     let defaults = {
@@ -286,9 +287,10 @@ runQuery = (query) =>   {
         this.resetSelection();
         var entity = this.props.ontology.entities[type];
         if (entity!== undefined) {
-          var query = `{ list(func:type(${type}),first:25) { `;
+          var query = dgraph.buildExpandTypeQuery(type);
+          //var query = `{ list(func:type(${type}),first:25) { `;
 
-            query += dgraph.infoSet(type)+'}}';
+          //  query += dgraph.infoSet(type)+'}}';
             var title = `expand ${type}`;
             this.runQuery(query).then((r)=>this.analyseQueryResponse(query,r["data"],true,title))
           }
@@ -578,7 +580,7 @@ runQuery = (query) =>   {
         if (this.state.selectedNode !== undefined) {
           return <NodeInfo value={this.state.selectedNode} reveal={(data)=>this.revealEdges(data)} expand={(data)=>this.expandNode(data,'top 10')}/>
         } else if (this.state.selectedType !== undefined) {
-          return   <NodeTypePanel type={this.state.selectedType} schema={this.props.ontology.entities[this.state.selectedType]}query={(data)=>this.searchNode(data)}/>
+          return   <NodeTypePanel type={this.state.selectedType} query={(data)=>this.searchNode(data)}/>
 
 
         } else if (this.state.selectedList !== undefined) {
@@ -588,6 +590,16 @@ runQuery = (query) =>   {
       setLayout(layoutName) {
         if (layouts.layoutMap[layoutName] !== undefined) {
           this.layoutOptions = layouts.layoutMap[layoutName];
+          if (this.cyRef !== undefined) {
+            this.cyRef.nodes(":locked").unlock();
+            this.cyRef.layout(this.layoutOptions).run();
+          }
+        }
+
+      }
+      setSchemaLayout(layoutName) {
+        if (layouts.layoutMap[layoutName] !== undefined) {
+          this.schemaLayoutOptions = layouts.layoutMap[layoutName];
           if (this.cyRef !== undefined) {
             this.cyRef.nodes(":locked").unlock();
             this.cyRef.layout(this.layoutOptions).run();
@@ -620,13 +632,10 @@ runQuery = (query) =>   {
           <Selector options={[{name:"dagre"},{name:"cola"},{name:"klay"},{name:"cose-bilkent"}]} key={"layout"} onChange={(e)=>this.setLayout(e.name)}/>
           <CytoscapeComponent  stylesheet={this.styles} elements={this.state.elements} layout={this.layoutOptions}  cy={(cy) => this.init(cy)} style={ { background: '#ffe6ff', width: '1200px', height: '600px' } } />;
           </Tab>
-          <Tab eventKey="json" title="JSON">
-          <Form>
-          <Form.Group className="m-3" controlId="exampleForm.ControlTextarea1">
-          <Form.Label>Response</Form.Label>
-          <Form.Control as="textarea" value={this.state.json} rows={this.state.rows} readOnly />
-          </Form.Group>
-          </Form>
+          <Tab eventKey="schema" title="Schema">
+          <Selector options={[{name:"dagre"},{name:"cola"},{name:"klay"},{name:"cose-bilkent"}]} key={"layout"} onChange={(e)=>this.setSchemaLayout(e.name)}/>
+          <CytoscapeComponent  stylesheet={this.styles} elements={this.schemaGraph} layout={this.schemaLayoutOptions}  cy={(cy) => {}} style={ { background: '#ffe6ff', width: '1200px', height: '600px' } } />;
+
           </Tab>
 
           </Tabs>
