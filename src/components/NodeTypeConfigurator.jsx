@@ -34,6 +34,9 @@ class NodeTypeConfigurator extends React.Component {
     });
   }
   generateForm() {
+    var first = this.state.config.expand != undefined ? this.state.config.expand.first : 10;
+
+
     return (
     <Form>
       <Form.Group  controlId="typeconfigurator">
@@ -43,7 +46,7 @@ class NodeTypeConfigurator extends React.Component {
           type='text'
           name='first'
           placeholder='search string'
-          defaultValue={this.state.config.expand.first}
+          defaultValue={first}
           onChange={this.handleExpandChange.bind(this)}/>
       </Form.Group>
       {/*

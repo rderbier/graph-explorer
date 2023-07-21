@@ -350,6 +350,7 @@ runQuery = (query) =>   {
 
           const expandType = typeInfo.relations[relation].entity;
           const expandTypeInfo = this.props.ontology.entities[expandType];
+          if (expandTypeInfo.relations != undefined) {
           Object.entries(expandTypeInfo.relations).forEach(([key,value]) => {
             if (uidMap[value.entity] == undefined) {
               var list = this.getUidsForType(value.entity);
@@ -358,9 +359,10 @@ runQuery = (query) =>   {
               }
             }
           })
+         }
           var query = dgraph.buildExpandQuery(type,uid,relation,uidMap);
           this.setVisitedNode(ele);
-          const title = `Expand ${type} ${ele.data()['name']}`
+          const title = `Expand ${type} ${ele.data()['label']}`
           this.runQuery(query).then((r)=>this.analyseQueryResponse(query,r["data"],false,title))
           console.log(`round ${this.stepIndex}`);
 

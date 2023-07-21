@@ -1,6 +1,9 @@
-import {ontology,uiconfig} from '../ontology/donors.js';
 
+import {ontology, uiconfig} from '../ontology/investments_graphql.js';
+
+//const dgraphEndpoint = "/query?timeout=20s&debug=true"
 const dgraphEndpoint = "/query?timeout=20s&debug=true"
+const dgraphEndpointGraphQL = "/graphql"
 var key
 var schema
 var behavior = uiconfig
@@ -177,6 +180,7 @@ const buildExpandQuery = (type,uid,relation,uidMap) => {
 
 
     let nodeSection = "";
+    if (expandTypeInfo.relations != undefined) {
     Object.entries(expandTypeInfo.relations).forEach(([key,value]) => {
 
       if (uidMap[value.entity] !== undefined) {
@@ -199,6 +203,7 @@ const buildExpandQuery = (type,uid,relation,uidMap) => {
             }
           }
         })
+      }
         // add a section for each entry in the uidMap
         let info = infoSet(expandType);
         let varName = (nodeSection !== "") ? "nodes as " : "";
