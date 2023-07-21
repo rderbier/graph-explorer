@@ -20,7 +20,7 @@ import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
       }
   start(state) {
      if (state == true) {
-       this.setState({connected:state, style:dgraph.getStyle(), ontology:dgraph.getOntology()})
+       this.setState({connected:state, style:dgraph.getStyle(), uiconfig: dgraph.getUiconfig(), ontology:dgraph.getOntology()})
      } else {
        this.setState({connected:state})
      }
@@ -44,7 +44,7 @@ import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
         <Container fluid >
         <AppHeader connexion="localhost:8080"/>
         <Container fluid className="pt-5">
-        <Explorer style={this.state.style} ontology={this.state.ontology}/>
+        <Explorer style={this.state.style} uiconfig={this.state.uiconfig} ontology={this.state.ontology}/>
         </Container>
         </Container>
 

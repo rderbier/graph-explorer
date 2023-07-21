@@ -38,7 +38,7 @@ class GraphView extends React.Component {
 
   constructor(props) {
     super(props);
-    this.styles = utils.buildStyles(props.style);
+    this.styles = utils.buildStyles(props.style, props.uiconfig);
     this.schemaGraph = utils.buildSchemaGraph(props.ontology);
     this.categories = dgraph.getCategories(props.ontology);
     this.exploration = new Exploration();

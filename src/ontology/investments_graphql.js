@@ -54,7 +54,7 @@ const ontology = {
             isArray:true,
             entity:"Company",
             relationNode:{predicate:"Investor.invest",entity:"Investment",out_predicate:"Investment.company"},
-            expand:{order:"orderdesc",sort:"OS",first:"10"},
+            expand:{order:"orderdesc",sort:"Investment.OS_0",first:"10"},
             reverse:"investors"
           },
           "type" : { entity:"InvestorType"}
@@ -103,9 +103,7 @@ const uiconfig = {
   entities : {
     "Company" : {
         expand : {order:"orderdesc",sort:"Company.name",first:"10"},
-        expandnode: {
-          "School.projects" : {order:"orderdesc",sort:"count(Project.donations)",first:"10"}
-        }
+        sizePerField: 'investors'
     },
     "Investor" : {
       expand : {order:"orderdesc",sort:"Investor.name",first:"10"},

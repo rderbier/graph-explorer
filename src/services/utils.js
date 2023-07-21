@@ -8,7 +8,7 @@ function sizePerField(ele,field) {
 }, 0);
    return 80 + 80*ele.data()[field]/max
 }
-function buildStyles(graphStyle) {
+function buildStyles(graphStyle, uiconfig = { entities : {}}) {
   // graphStyle has colors and colorMap
 
   let styles = [
@@ -60,17 +60,17 @@ function buildStyles(graphStyle) {
 
     },
     {
-      selector: 'node[donors]',
+      selector: '.Company',
       style: {
-        width: function( ele ){  return sizePerField(ele,'donors') },
-        height: function( ele ){  return sizePerField(ele,'donors') },
+        width: function( ele ){  return sizePerField(ele,'investors') },
+        height: function( ele ){  return sizePerField(ele,'investors') },
       }
     },
     {
-      selector: 'node[projects]',
+      selector: '.Investor',
       style: {
-        width: function( ele ){  return sizePerField(ele,'projects') },
-        height: function( ele ){  return sizePerField(ele,'projects') },
+        width: function( ele ){  return sizePerField(ele,'investments') },
+        height: function( ele ){  return sizePerField(ele,'investments') },
       }
     },
 
@@ -120,14 +120,26 @@ function buildStyles(graphStyle) {
   ]
 
   for (var type in graphStyle.entities) {
-    if (graphStyle.entities[type].style["background-color"] != undefined) {
+    if (graphStyle.entities[type].style != undefined) {
       styles.push({
         selector: `.${type}, .type${type}`,
-        style: {
-          'background-color': graphStyle.colors[graphStyle.entities[type].style["background-color"]]
-        }
+        style: graphStyle.entities[type].style 
       })
     }
+    // if we have a node sizePerField then we set the style to use the sizePerField function with the configured field
+
+    /*
+    if (uiconfig.entities[type] && uiconfig.entities[type].sizePerField) {
+      styles.push({
+        selector: `.${type}`,
+        style: {
+          width: function( ele ){  return sizePerField(ele,uiconfig.entities[type].sizePerField) },
+          height: function( ele ){  return sizePerField(ele,uiconfig.entities[type].sizePerField) }
+        }
+      })
+       
+    }
+    */
   }
 
   return styles;

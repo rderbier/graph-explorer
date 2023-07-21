@@ -54,6 +54,9 @@ const getCategories = (ontology) =>{
 const getOntology = ()=>{
    return ontology;
 }
+const getUiconfig = ()=>{
+  return uiconfig;
+}
 const getStyle = ()=> {
   let style = {
     colors: [
@@ -73,10 +76,12 @@ const getStyle = ()=> {
       ([key, value]) => {
         style.entities[key] = {
           style: {
-            "background-color": i
+            "background-color": style.colors[i]
+
           }
         }
         i = (i + 1 ) % 6
+        
       }
     );
 
@@ -321,6 +326,7 @@ export default {
   getCategories,
   getStyle,
   getOntology,
+  getUiconfig,
   getTypeSchema,
   getTypeBehavior,
   infoSet,
