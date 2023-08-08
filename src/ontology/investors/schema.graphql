@@ -1,4 +1,4 @@
-ype InstitutionType {
+type InstitutionType {
   name: String! @id
 }
 
@@ -22,19 +22,18 @@ type Investment {
 }
 
 type Industry {
-  name: String! @id
+  name: String! @id @search(by: [fulltext])
   sector: Sector @hasInverse(field: industries)
 }
-
 type Sector {
-  name: String! @id
+  name: String! @id @search(by: [term])
   industries: [Industry] @hasInverse(field: sector)
 }
 
 type Company {
   id: String! @id
   ticker: String! @id @search(by: [hash])
-  name: String @search(by: [hash, regexp])
+  name: String @search(by: [fulltext,hash, regexp])
   factsetIndustry: Industry
   country: Country
   investments: [Investment]

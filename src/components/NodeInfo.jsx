@@ -1,9 +1,9 @@
-import Container from 'react-bootstrap/Container';
+
 import Button from 'react-bootstrap/Button';
 import Card from 'react-bootstrap/Card';
 import React from 'react';
+import dgraph from '../services/dgraph.js';
 
-import Stack from 'react-bootstrap/Stack';
 
 
 /*
@@ -22,7 +22,8 @@ class NodeInfo extends React.Component {
   constructor(props) {
     super(props);
     this.state = {
-      data : this.props.value.data()
+      data : this.props.value.data(),
+      schema : dgraph.getTypeSchema(this.props.value.data()["dgraph.type"])
     };
   }
 
@@ -38,7 +39,7 @@ class NodeInfo extends React.Component {
         <Card.Text>
         {Object.keys(data).map((key)=> {
           if ( ['id','source','target','round','uid','dgraph.type','label','name','parent'].indexOf(key) == -1) {
-             return (typeof data[key] != 'object' && <><b>{key}</b> {data[key]}<br/></> )
+             return (typeof data[key] != 'object' && <><b>{this.state.schema.properties[key] ? this.state.schema.properties[key].alias : key}</b> {data[key]}<br/></> )
           }
         })}
 

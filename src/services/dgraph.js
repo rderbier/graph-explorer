@@ -114,7 +114,7 @@ function infoSet(type) {
     Object.entries(entity.relations).forEach(([key,value]) => {
       let alias = key
       if (value.label !== undefined ) {
-        alias = `${value.label} : `
+        alias = `${value.label}`
       }
       if (value.isArray == true) {
          if (value.relationNode != undefined) {  // count the predicate to the relationNode

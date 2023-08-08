@@ -24,7 +24,7 @@ class NodeSelector extends React.Component {
         if ( this.state.schema.properties[key].searchable == true) {
            return (
              <>
-             <Form.Label>{key}</Form.Label>
+             <Form.Label>{this.state.schema.properties[key].alias || key}</Form.Label>
              <Form.Control
                  required
                  type={this.state.schema.properties[key].type}
