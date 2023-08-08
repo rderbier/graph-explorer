@@ -5,10 +5,10 @@ const ontology = {
         label: "Company.name",
         properties : {
            "Company.name" : {  alias:"name",type:"text", searchable: true, operators:["anyoftext"]},
-           "Company.ticker" : { type:"text", searchable: true, operators:["eq"]},
-           "Company.factsetid" : { type:"text", searchable: true, operators:["eq"]},
-           "country" : { type:"text", searchable: true, path:["Company.country","Country.name"], operators:["eq"]},
-           "industry" : { type:"text", searchable: true, path:["Company.industry","Industry.name"], operators:["eq"]},
+           "Company.ticker" : { alias:"ticker", type:"text", searchable: true, operators:["eq"]},
+           "Company.id" : { alias:"id", type:"text", searchable: true, operators:["eq"]},
+           "country" : { alias:"country", type:"text", searchable: true, path:["Company.country","Country.name"], operators:["eq"]},
+           "industry" : { type:"text", searchable: true, path:["Company.factsetIndustry","Industry.name"], operators:["eq"]},
         },
         relations : {
           "investors" : {
@@ -19,7 +19,7 @@ const ontology = {
             expand:{order:"orderdesc",sort:"Investment.OS_0",first:"10"},
             reverse:"investments"
           },
-          "Company.industry" : { entity:"Industry"},
+          "Company.factsetIndustry" : { alias:"industry", entity:"Industry"},
           "Company.country" : { entity:"Country"}
         },
         features : {
@@ -73,19 +73,22 @@ const ontology = {
         parent:"Sector",
         label: "Industry.name",
         properties : {
-           "Industry.name" : { alias:"name", type:"text", searchable: true, operators:["anyoftext"]}
+           "Industry.name" : { alias:"name", type:"text", searchable: true, operators:["eq"]},
+           "sector" : { type:"text", searchable: false, path:["Industry.sector","Sector.name"]}
          },
         relations : {
-          "sector" : { entity:"Sector"}
+          "Industry.sector" : { entity:"Sector"}
         }
       },
       "Sector" : {
         type:"category",
         label:"Sector.name",
         properties : {
-           "Sector.name" : { alias:"name",type:"text", searchable: true, operators:["anyoftext"]}
+           "Sector.name" : { alias:"name",type:"text", searchable: true, operators:["eq"]}
          },
-         relations : {}
+         relations : {
+          "Sector.industries" : { isArray:true, entity:"Industry"}
+         }
       },
       "InvestorType" : {
         type:"category",
@@ -113,6 +116,9 @@ const uiconfig = {
     },
     "Industry" : {
       expand : {order:"orderdesc",sort:"Industry.name",first:"10"},
+    },
+    "Sector" : {
+      expand : {order:"orderdesc",sort:"Sector.name",first:"10"},
     },
     "InvestorType" : {
       expand : {order:"orderdesc",sort:"InvestorType.name",first:"10"},
