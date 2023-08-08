@@ -1,0 +1,46 @@
+ype InstitutionType {
+  name: String! @id
+}
+
+type Investor {
+  id: String! @id
+  name: String! @search(by: [hash])
+  institution_type: InstitutionType
+  total_aum: Float
+  aum_bin: String
+  invest: [Investment] @hasInverse(field: investor)
+}
+
+type Investment {
+  POS_0: Float
+  diff_POS_30: Float
+  MKTVAL_0: Float
+  diff_MKTVAL_30: Float
+  investor: Investor @hasInverse(field: invest)
+  OS_0: Float
+  company: Company @hasInverse(field: investments)
+}
+
+type Industry {
+  name: String! @id
+  sector: Sector @hasInverse(field: industries)
+}
+
+type Sector {
+  name: String! @id
+  industries: [Industry] @hasInverse(field: sector)
+}
+
+type Company {
+  id: String! @id
+  ticker: String! @id @search(by: [hash])
+  name: String @search(by: [hash, regexp])
+  factsetIndustry: Industry
+  country: Country
+  investments: [Investment]
+}
+
+type Country {
+  CountryCode: String! @id
+  name: String @search(by: [hash])
+}

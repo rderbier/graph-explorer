@@ -51,5 +51,8 @@
       "last 1 safari version"
     ]
   },
-  "proxy": "https://dawn-brook.us-east-1.aws.cloud.dgraph.io"
+  "proxy": "https://icy-moon.eu-west-1.aws.cloud.dgraph.io",
+  "_proxy": "https://dawn-brook.us-east-1.aws.cloud.dgraph.io" 
+
+
 }

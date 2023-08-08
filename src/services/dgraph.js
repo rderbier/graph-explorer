@@ -1,9 +1,10 @@
 
 import {ontology, uiconfig} from '../ontology/investments_graphql.js';
 
-//const dgraphEndpoint = "/query?timeout=20s&debug=true"
+
 const dgraphEndpoint = "/query?timeout=20s&debug=true"
 const dgraphEndpointGraphQL = "/graphql"
+// key is passed by the the UI login page
 var key
 var schema
 var behavior = uiconfig
