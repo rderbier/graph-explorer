@@ -103,13 +103,21 @@ const ontology = {
 used for UI related configuration
 */
 const uiconfig = {
+  logo_url: "https://research.fearnleysecurities.no/images/Capital-Markets_main_logo.png",
   entities : {
     "Company" : {
         expand : {order:"orderdesc",sort:"Company.name",first:"10"},
-        sizePerField: 'investors'
+        sizePerField: 'investors',
+        style: {
+          "background-color": "rgb(0,67,128)",
+          "color": "lightgrey"
+        }
     },
     "Investor" : {
       expand : {order:"orderdesc",sort:"Investor.name",first:"10"},
+      style: {
+        "background-color": "rgb(61,140,109)"
+      }
     },
     "Country" : {
       expand : {order:"orderdesc",sort:"Country.name",first:"10"},

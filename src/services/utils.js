@@ -120,7 +120,12 @@ function buildStyles(graphStyle, uiconfig = { entities : {}}) {
   ]
 
   for (var type in graphStyle.entities) {
-    if (graphStyle.entities[type].style != undefined) {
+    if (uiconfig.entities[type]?.style != undefined) {
+      styles.push({
+        selector: `.${type}, .type${type}`,
+        style: uiconfig.entities[type].style 
+      })
+    } else if (graphStyle.entities[type].style != undefined) {
       styles.push({
         selector: `.${type}, .type${type}`,
         style: graphStyle.entities[type].style 

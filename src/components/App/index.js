@@ -16,7 +16,7 @@ import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
 
     constructor(props) {
       super(props);
-      this.state= { connected :false};
+      this.state= { connected :false, uiconfig: dgraph.getUiconfig(),  ontology:dgraph.getOntology()};
       }
   start(state) {
      if (state == true) {
@@ -30,7 +30,7 @@ import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
     if (!this.state.connected) {
       return (<>
       <Container fluid >
-      <AppHeader connexion="localhost:8080"/>
+      <AppHeader logo_url={this.state.uiconfig?.logo_url} connexion="localhost:8080"/>
       <Container fluid className="pt-5">
       <Credentials onConnect={(state)=>this.start(state) }/>
       </Container>
@@ -42,7 +42,7 @@ import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
       return (
         <>
         <Container fluid >
-        <AppHeader connexion="localhost:8080"/>
+        <AppHeader logo_url={this.state.uiconfig?.logo_url} connexion="localhost:8080"/>
         <Container fluid className="pt-5">
         <Explorer style={this.state.style} uiconfig={this.state.uiconfig} ontology={this.state.ontology}/>
         </Container>

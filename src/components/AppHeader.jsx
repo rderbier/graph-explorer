@@ -17,7 +17,7 @@ class AppHeader extends React.Component {
         <Navbar.Brand href="#home">
           <img
             alt=""
-            src="/images/dgraph.svg"
+            src = {this.props.logo_url || "/images/dgraph.svg"}
             height="30"
 
             className="d-inline-block align-top"
@@ -26,8 +26,8 @@ class AppHeader extends React.Component {
         </Navbar.Brand>
         <Navbar.Toggle aria-controls="basic-navbar-nav" />
         <Navbar.Collapse id="basic-navbar-nav" className="justify-content-end">
-          <Navbar.Text onClick={(e)=>console.log("clicked")}>
-            Connected to {this.props.connexion}
+          <Navbar.Text>
+            Connected
           </Navbar.Text>
         </Navbar.Collapse>
       </Container>
