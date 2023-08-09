@@ -35,9 +35,10 @@ const ontology = {
       "Investment" : {
         type:"relation",
         properties : {
-          "OS" : { type:"float", searchable: false},
-          "POS" :{ type:"int", searchable: false},
-          "MKTVAL" :{ type:"float", searchable: false}
+          "Investment.OS_0" : { alias:"OS", type:"float", searchable: false},
+          "Investment.POS_0" :{ alias:"POS", type:"int", searchable: false},
+          "Investment.MKTVAL_0" :{ alias:"MKTVAL", type:"float", searchable: false},
+          "Investment.diff_POS_30" : { alias:"diff_POS_30", type:"float", searchable: false}
         },
         relations : {
           "company" : { isArray:false, entity:"Company"}

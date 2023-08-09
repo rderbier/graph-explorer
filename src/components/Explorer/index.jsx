@@ -221,7 +221,7 @@ addEdge(elements,source,target,label, data) {
 
         elt.data = data || {};
         elt.data.id = `${source.uid}:${target.uid}:${label}`;
-        elt.data.info = `${source.uid}:${target.uid}:${label}`;
+        //elt.data.info = `${source.uid}:${target.uid}:${label}`;
         elt.data.source =source.uid;
         elt.data.target =target.uid;
         elt.data.label = label;
