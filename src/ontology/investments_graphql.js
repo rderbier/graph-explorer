@@ -7,8 +7,8 @@ const ontology = {
            "Company.name" : {  alias:"name",type:"text", searchable: true, operators:["anyoftext"]},
            "Company.ticker" : { alias:"ticker", type:"text", searchable: true, operators:["eq"]},
            "Company.id" : { alias:"id", type:"text", searchable: true, operators:["eq"]},
-           "country" : { alias:"country", type:"text", searchable: true, path:["Company.country","Country.name"], operators:["eq"]},
-           "industry" : { type:"text", searchable: true, path:["Company.factsetIndustry","Industry.name"], operators:["eq"]},
+           "country" : { alias:"country", type:"text", searchable: false, path:["Company.country","Country.name"], operators:["eq"]},
+           "industry" : { type:"text", searchable: false, path:["Company.factsetIndustry","Industry.name"], operators:["eq"]},
         },
         relations : {
           "investors" : {
@@ -74,11 +74,18 @@ const ontology = {
         parent:"Sector",
         label: "Industry.name",
         properties : {
-           "Industry.name" : { alias:"name", type:"text", searchable: true, operators:["eq"]},
-           "sector" : { type:"text", searchable: false, path:["Industry.sector","Sector.name"]}
+           "Industry.name" : { alias:"name", type:"text", searchable: true, operators:["eq"]}
          },
         relations : {
-          "Industry.sector" : { entity:"Sector"}
+          "Industry.sector" : { alias:"sector", entity:"Sector", reverse:"Sector.industries"},
+          "Industry.companies" : {
+            isArray:true,
+            entity:"Company",
+            label : "companies",
+            expand:{order:"orderdesc",sort:"Company.name",first:"10"},
+            reverse:"Company.factsetIndustry"
+          },
+          
         }
       },
       "Sector" : {
