@@ -394,11 +394,12 @@ runQuery = (query) =>   {
 
           var target;
           let uid =  e['id'] || e['uid'] ;
-          const type = e['dgraph.type'][0];
-          const typeInfo = dgraph.getTypeSchema(type);
-          const source = { uid:uid, type:type}
+          const type = e['dgraph.type'] != undefined ? e['dgraph.type'][0] : undefined;
+          
           console.log(`Entering ${type} ${uid}`);
-          if (uid !== undefined) {
+          if ((uid !== undefined) && (type != undefined)) {
+            const typeInfo = dgraph.getTypeSchema(type);
+            const source = { uid:uid, type:type}
             var point = {};
             for(var key in e) {
               if (key!=='dgraph.type') {
@@ -474,7 +475,7 @@ runQuery = (query) =>   {
               }
               console.log(`node already exists ${uid}`);
             }
-          } else { console.log(`node without id or uid`)}
+          } else { console.log(`node without id or uid or dgraph.type`)}
           // return an object with uid and type
           var nodeReturned
           if (uid !== undefined) {
