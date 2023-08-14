@@ -372,9 +372,35 @@ runQuery = (query) =>   {
           console.log(`Apply feature to expand node ${featureParams.algo}`);
           const nodeData = ele.data();
           const type = nodeData['dgraph.type'];
-          const title = `Proximity ${type} ${ele.data()['name']}`
-          const query = dgraph.buildJaccardQuery(type,nodeData.uid,featureParams);
-          this.runQuery(query).then((r)=>this.analyseProximityResponse(query,r["data"],false,title))
+          const title = `Proximity ${type} ${ele.data()['uid']}`
+          switch (featureParams.algo) {
+            case 'jaccard':
+              const query = dgraph.buildJaccardQuery(type,nodeData.uid,featureParams);
+              this.runQuery(query).then((r)=>this.analyseProximityResponse(query,r["data"],false,title))
+              break;
+            case 'graphql':
+              console.log(`Apply graphql query ${featureParams.query}`);
+              dgraph.runGraphQLQuery(featureParams.query,{"uid":nodeData['uid']}).then(
+        
+                (r) => {
+                  
+                  let map = r["data"]["getSimilarIssuesById"].map( (e)=>{ return { "uid":e["id"], "Issue.name":e["name"], "Issue.description":e["description"], "dgraph.type":["Issue"]} });
+                  let data = {
+                    "similarity" : [ 
+                      { 
+                        "uid": nodeData['uid'], 
+                        "dgraph.type": ["Issue"], 
+                        "similar" : map
+                      }
+                     ]
+                    }
+                    console.log(`data ${JSON.stringify(data)}`);
+                  this.analyseQueryResponse(featureParams.query,data,false,title)
+                }
+              )
+              break;
+              
+          }
         }
         isRelation(e) {
           return (e['dgraph.type'][0] == "Investment")
@@ -633,7 +659,7 @@ runQuery = (query) =>   {
 
           <Tab eventKey="graph" title="Graph">
           <Selector options={[{name:"dagre"},{name:"cola"},{name:"klay"},{name:"cose-bilkent"}]} key={"layout"} onChange={(e)=>this.setLayout(e.name)}/>
-          <CytoscapeComponent  stylesheet={this.styles} elements={this.state.elements} layout={this.layoutOptions}  cy={(cy) => this.init(cy)} style={ { background: '#ffe6ff', width: '1200px', height: '600px' } } />;
+          <CytoscapeComponent  stylesheet={this.styles} elements={this.state.elements} layout={this.layoutOptions}  cy={(cy) => this.init(cy)} style={ { class:'graph-dynamic-height', background: '#ffe6ff', height: '600px' } } />;
           </Tab>
           <Tab eventKey="schema" title="Schema">
           <Selector options={[{name:"dagre"},{name:"cola"},{name:"klay"},{name:"cose-bilkent"}]} key={"layout"} onChange={(e)=>this.setSchemaLayout(e.name)}/>

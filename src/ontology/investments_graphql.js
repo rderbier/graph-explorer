@@ -118,7 +118,9 @@ const uiconfig = {
         sizePerField: 'investors',
         style: {
           "background-color": "rgb(0,67,128)",
-          "color": "lightgrey"
+          "color": "lightgrey",
+          "font-size": "12px"
+
         }
     },
     "Investor" : {
