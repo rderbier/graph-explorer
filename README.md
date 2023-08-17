@@ -17,6 +17,8 @@ Search  "TO DO" in the source code.
 - add search on categories
 - don't add reverse edge
 - build expand for non relations
+- make graphql action generic
+- add dql action with naming convention to get similar nodes for example
 ## Available Scripts
 
 In the project directory, you can run:
