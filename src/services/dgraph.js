@@ -2,7 +2,8 @@
 import {ontology, uiconfig} from '../ontology/investments_graphql.js';
 
 
-const dgraphEndpoint = "/query?timeout=20s&debug=true"
+// const dgraphEndpoint = "https://icy-moon.eu-west-1.aws.cloud.dgraph.io/query?timeout=20s&debug=true"
+const dgraphEndpoint = "/query?debug=true"
 const dgraphEndpointGraphQL = "/graphql"
 // key is passed by the the UI login page
 var key
@@ -25,7 +26,7 @@ const runQuery = (query) =>   {
   }
   return fetch(dgraphEndpoint,{
       method: 'POST',
-      headers: {'Content-Type':'application/json','Authorization':key},
+      headers: {'Content-Type':'application/json','Dg-Auth':key},
       body: JSON.stringify(payload),
     }).then( (response) => response.json()).then((j)=> {
 
