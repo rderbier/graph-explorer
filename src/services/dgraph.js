@@ -1,10 +1,8 @@
-
-import {ontology, uiconfig} from '../ontology/investments_graphql.js';
+import {ontology, uiconfig} from '../ontology/investments_graphql.js'
 
 
 // const dgraphEndpoint = "https://icy-moon.eu-west-1.aws.cloud.dgraph.io/query?timeout=20s&debug=true"
 const dgraphEndpoint = "/query?debug=true"
-const dgraphEndpointGraphQL = "/graphql"
 // key is passed by the the UI login page
 var key
 var schema
@@ -32,15 +30,13 @@ const runQuery = (query) =>   {
 
       console.log(`response ${JSON.stringify(j)}`);
       return j})
-
-
 }
 const getCategories = (ontology) =>{
   var query = "";
   Object.entries(ontology.entities).forEach(
     ([key, value]) => {
       console.log(key, value);
-      if ((value.type == "category") && (value.label != undefined)) {
+      if ((value.type === "category") && (value.label !== undefined)) {
         query += `  ${key}(func:type(${key})) { uid label:${value.label}} \n`;
       }
     }
@@ -54,8 +50,93 @@ const getCategories = (ontology) =>{
   }
 
 const getOntology = ()=>{
-   return ontology;
+  // build ontology from the schema
+  const query = "schema {}";
+  return runQuery(query).then((r)=>{ return ontologyFromSchema(r.data); });
 }
+const ontologyFromSchema = async (schema) => {
+  console.log(`schema ${schema}`);
+  // build a map from predicates in schema
+  var predicates = {}
+
+  for (var item of schema.schema) {
+    const predicate =  item.predicate
+    predicates[predicate] = item
+    predicates[predicate].label = predicate
+  }
+  var o = {entities:{}}
+  for (var item of schema.types) {
+    if (item.name.startsWith("dgraph.")) {
+      continue
+    }
+    let entity = {type:"entity", properties:{}, relations:{}}
+    // get all fields
+    for (let field of item.fields) {
+      const predicate = field.name;
+      if ((entity.label === undefined) && (predicate.endsWith("name") || predicate.endsWith("title") || predicate.endsWith("label"))) {
+        entity.label = predicate
+      }
+      // add properties and relations
+      if (predicates[predicate] !== undefined) {
+        // add the type to predicate domain
+        predicates[predicate].domain = predicates[predicate].domain || []
+        predicates[predicate].domain.push(item['name'])
+
+        const type = predicates[predicate].type
+        if (type === "uid") {
+          entity.relations[predicate] = {label:predicate, isArray:predicates[predicate].list === true}
+        } else {
+          entity.properties[predicate] = {type:type}
+          if (predicates[predicate].tokenizer !== undefined) {
+            entity.properties[predicate].searchable = true;
+            entity.properties[predicate].operators = ["allofterms"] // default operator -> set depending on tokenizer
+          }
+        }
+      }
+    }
+    o.entities[item.name] = entity
+  }
+  // get range for each predicate with a domain i.e used in a type
+  var query = '{'
+  for (let item of schema.schema) {
+    const predicate =  item.predicate
+    if ((item.domain !== undefined) && (item.type === "uid")) {
+      query += `
+        ${predicate} (func:has(${predicate}),first:1) {
+          range:${predicate} { dgraph.type }
+        }
+        `
+    }
+  }
+  query += '}'
+  const relations = await runQuery(query)
+  for (let item in relations.data) {
+    if (relations.data[item].length > 0) {
+      if (Array.isArray(relations.data[item][0].range)) {
+        predicates[item].range = relations.data[item][0].range[0]['dgraph.type'][0]
+      } else {
+        if (relations.data[item][0].range['dgraph.type'] !== undefined) {
+          predicates[item].range = relations.data[item][0].range['dgraph.type'][0]
+        }
+      }
+    }
+  }
+  // add entity to relations
+  for (let item in o.entities) {
+    for (let relation in o.entities[item].relations) {
+      if ((predicates[relation] !== undefined) && (predicates[relation].range !== undefined)) {
+        o.entities[item].relations[relation].entity = predicates[relation].range
+      } else {
+        // remove relation
+        delete o.entities[item].relations[relation]
+      }
+
+    }
+  }
+  console.log(`Ontology: ${JSON.stringify(o,null,2)}`);
+  return o;
+}
+
 const getUiconfig = ()=>{
   return uiconfig;
 }
@@ -314,10 +395,6 @@ const isConnected = (k) =>{
   })
   .catch ( (e)=> {console.log(e); throw ("Connection refused")});
 }
-
-
-
-
 
 export default {
   reverseEdge,

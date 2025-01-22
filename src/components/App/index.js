@@ -16,11 +16,12 @@ import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
 
     constructor(props) {
       super(props);
-      this.state= { connected :false, uiconfig: dgraph.getUiconfig(),  ontology:dgraph.getOntology()};
+      this.state= { connected :false};
       }
-  start(state) {
+  async start(state) {
      if (state == true) {
-       this.setState({connected:state, style:dgraph.getStyle(), uiconfig: dgraph.getUiconfig(), ontology:dgraph.getOntology()})
+       const ontology = await dgraph.getOntology()
+       this.setState({connected:state, style:dgraph.getStyle(), uiconfig: dgraph.getUiconfig(), ontology:ontology})
      } else {
        this.setState({connected:state})
      }
